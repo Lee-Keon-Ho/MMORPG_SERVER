@@ -1,11 +1,15 @@
-#include "App.h"
+#include "FieldApp.h"
 #include <stdio.h>
 
 int main(void)
 {
-	CApp app;
+	CFieldApp app;
 
-	app.Initialize();
-	app.CreateInstance();
-	app.StartInstance();
+	if (app.Init())
+	{
+		app.Run();
+	}
+	app.Destroy();
+	
+	return 0;
 }

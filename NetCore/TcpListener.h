@@ -17,7 +17,7 @@ public:
 	CTcpListener(PCSTR _ip, u_short _port);
 	~CTcpListener();
 
-	void Start();
+	bool Start();
 
 	SOCKET GetSocket() { return m_socket_info.socket; }
 };

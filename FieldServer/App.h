@@ -1,19 +1,19 @@
 #pragma once
-#include "../NetCore/TcpListener.h"
+
 class CApp
 {
-private:
-	CTcpListener* m_pListener;
-
 public:
 	CApp();
-	~CApp();
+	virtual ~CApp();
 
-	bool Initialize();
+	bool Init();
 	void Run();
 	void Destroy();
-	void CreateInstance();
-	void StartInstance();
 
-	ACCEPT_SOCKET_INFO Accept();
+protected:
+	virtual bool Initialize() = 0;
+	virtual bool CreateInstance() = 0;
+	virtual bool StartInstance() = 0;
+	virtual void RunLoop() {}
+	virtual void DeleteInstance() {}
 };
