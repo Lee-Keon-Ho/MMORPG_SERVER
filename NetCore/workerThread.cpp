@@ -1,7 +1,6 @@
 #include "workerThread.h"
 #include "IOCP.h"
 #include "session.h"
-//#include <WS2tcpip.h>
 #include <process.h>
 
 CWorkerThread::CWorkerThread()
@@ -14,6 +13,7 @@ CWorkerThread::~CWorkerThread()
 
 bool CWorkerThread::Start()
 {
+	//예외 처림? if문?
 	HANDLE handle = (HANDLE)_beginthreadex(NULL, 0, &CWorkerThread::ThreadFunc, this, 0, NULL);
 	return true;
 }
@@ -44,7 +44,7 @@ void CWorkerThread::RunLoop()
 
 		//printf("recv ok %ld : %ld \n", pSession->GetSocket(), bytesTrans);
 
-		//int state = pSession->RecvEvent(bytesTrans);
+		pSession->RecvHandle(bytesTrans);
 
 		/*if (state < 0)
 		{

@@ -9,6 +9,7 @@ CTcpListener::CTcpListener()
 
 CTcpListener::CTcpListener(PCSTR _ip, u_short _port)
 {
+	// ¿¹¿Ü
 	m_socket_info.socket = WSASocketW(PF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 
 	m_socket_info.addr.sin_family = AF_INET;
@@ -19,6 +20,7 @@ CTcpListener::CTcpListener(PCSTR _ip, u_short _port)
 
 CTcpListener::~CTcpListener()
 {
+	closesocket(m_socket_info.socket);
 }
 
 bool CTcpListener::Start()

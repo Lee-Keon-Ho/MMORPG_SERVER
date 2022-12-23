@@ -47,6 +47,39 @@ bool CSession::Send(char* _buffer, int _size)
 	return true;
 }
 
+int CSession::RecvHandle(DWORD _size)
+{
+	int size;
+
+	m_ringBuffer->Write(_size);
+
+	while (true)
+	{
+		size = PacketHandle();
+
+		if (size < 0) return size;
+
+		m_ringBuffer->Read(size);
+
+		if (m_ringBuffer->GetReadSize() == 0) break;
+	}
+
+	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
+	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
+
+	Recv();
+
+	return 0;
+}
+
+int CSession::PacketHandle()
+{
+	// Player을 만들어서 
+	// PacketHandle을 싱글톤을 만들어서 사용 override 할 부분
+	// player에서 PacketHandle을 싱글톤으로 만들어서 사용
+	return 0; 
+}
+
 void CSession::SetAddr(SOCKADDR_IN _addr)
 {
 	m_socket_info.addr = _addr;

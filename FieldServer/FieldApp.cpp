@@ -36,6 +36,7 @@ bool CFieldApp::StartInstance()
 {
 	if (!ThreadStart()) return false;;
 	if (!m_pListener->Start()) return false;
+	printf("server start...\n");
 	return true;
 }
 
@@ -48,7 +49,7 @@ void CFieldApp::RunLoop()
 		//CPlayer* pPlayer = new CPlayer(socket);
 		//CIocp::GetInstance()->Associate(socket, (CSession*)pPlayer);
 
-		//pPlayer->WsaRecv(); // OnConnect() 뭔가 설정할게 있다면
+		//pPlayer->WsaRecv(); // OnConnect() 뭔가 설정할게 있다면 // player Map을 이용
 	}
 }
 
@@ -78,7 +79,7 @@ bool CFieldApp::ThreadStart()
 	GetSystemInfo(&si);
 	for (unsigned int i = 0; i < si.dwNumberOfProcessors * 2; ++i)
 	{
-		if (!workerThread.Start()) return false; // 문제가 생겼다
+		if (!workerThread.Start()) return false; // 예외
 	}
 	return true;
 }

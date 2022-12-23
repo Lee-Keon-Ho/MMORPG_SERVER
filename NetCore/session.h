@@ -25,6 +25,9 @@ public:
 	bool Recv();
 	bool Send(char* _buffer, int _size);
 
+	int RecvHandle(DWORD _size);
+	virtual int PacketHandle();
+
 	void SetAddr(SOCKADDR_IN _addr);
 	SOCKET GetSocket();
 	CRingBuffer* GetRingBuffer();
