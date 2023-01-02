@@ -13,20 +13,18 @@ class CSession
 protected:
 	WSABUF m_dataBuf;
 	ACCEPT_SOCKET_INFO m_socket_info;
-
-	WSAOVERLAPPED m_overlapped;
 	
 	CRingBuffer* m_ringBuffer;
 public:
 	CSession();
-	CSession(SOCKET _socket);
+	CSession(ACCEPT_SOCKET_INFO _socketInfo);
 	virtual ~CSession();
 
-	bool Recv();
 	bool Send(char* _buffer, int _size);
-
 	int RecvHandle(DWORD _size);
-	virtual int PacketHandle();
+
+	virtual bool Recv() = 0;
+	virtual int PacketHandle() = 0;
 
 	void SetAddr(SOCKADDR_IN _addr);
 	SOCKET GetSocket();

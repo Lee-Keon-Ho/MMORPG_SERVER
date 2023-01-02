@@ -1,23 +1,23 @@
 #pragma once
 #include <WinSock2.h>
 
-class CSession;
-
 class CIocp
 {
+public:
+	static CIocp* GetInstance()
+	{
+		static CIocp  instance;
+		return &instance;
+	}
+
 private:
-	static CIocp* pInstance;
 	CIocp();
 	~CIocp();
-
-public:
-	static CIocp* GetInstance();
-	static void DeleteInstance();
 
 private:
 	HANDLE m_iocp;
 
 public:
-	HANDLE Associate(SOCKET _socket, CSession* _session);
+	HANDLE Associate(SOCKET _socket);
 	HANDLE GetHandle() { return m_iocp; }
 };

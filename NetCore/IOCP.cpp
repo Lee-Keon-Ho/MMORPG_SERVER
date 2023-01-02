@@ -1,18 +1,4 @@
 #include "IOCP.h"
-#include "session.h"
-
-CIocp* CIocp::pInstance = nullptr;
-
-CIocp* CIocp::GetInstance()
-{
-	if (pInstance == nullptr) pInstance = new CIocp();
-	return pInstance;
-}
-
-void CIocp::DeleteInstance()
-{
-	if (pInstance) { delete pInstance; pInstance = nullptr; }
-}
 
 CIocp::CIocp()
 {
@@ -24,7 +10,7 @@ CIocp::~CIocp()
 	CloseHandle(m_iocp);
 }
 
-HANDLE CIocp::Associate(SOCKET _socket, CSession* _session)
+HANDLE CIocp::Associate(SOCKET _socket)
 {
-	return CreateIoCompletionPort((HANDLE)_socket, m_iocp, (ULONG_PTR)_session, 0);
+	return CreateIoCompletionPort((HANDLE)_socket, m_iocp, NULL, 0);
 }

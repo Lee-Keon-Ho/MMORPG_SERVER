@@ -1,6 +1,7 @@
 #include "FieldApp.h"
 #include "../NetCore/IOCP.h"
 #include "../NetCore/workerThread.h"
+#include "CUser.h"
 #include <stdio.h>
 
 #pragma comment (lib, "./../x64/Debug/NetCore.lib")
@@ -44,31 +45,22 @@ void CFieldApp::RunLoop()
 {
 	while (true)
 	{
-		ACCEPT_SOCKET_INFO socketInfo = Accept();
+		// accept Thread
+		ACCEPT_SOCKET_INFO socketInfo;
+		int size = sizeof(sockaddr_in);
 
-		//CPlayer* pPlayer = new CPlayer(socket);
-		//CIocp::GetInstance()->Associate(socket, (CSession*)pPlayer);
+		socketInfo.socket = accept(m_pListener->GetSocket(), (sockaddr*)&socketInfo.addr, &size);
 
-		//pPlayer->WsaRecv(); // OnConnect() 뭔가 설정할게 있다면 // player Map을 이용
+		CUser* pUser = new CUser(socketInfo);
+		CIocp::GetInstance()->Associate(socketInfo.socket);
+
+		pUser->Recv();// OnConnect() 뭔가 설정할게 있다면 // player Map을 이용
 	}
 }
 
 void CFieldApp::DeleteInstance()
 {
 	if (m_pListener) { delete m_pListener; m_pListener = nullptr; }
-}
-
-ACCEPT_SOCKET_INFO CFieldApp::Accept()
-{
-	int size = sizeof(sockaddr_in);
-
-	ACCEPT_SOCKET_INFO clientInfo;
-
-	clientInfo.socket = accept(m_pListener->GetSocket(), (sockaddr*)&clientInfo.addr, &size);
-
-	// 예외 처리
-
-	return clientInfo;
 }
 
 bool CFieldApp::ThreadStart()

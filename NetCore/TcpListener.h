@@ -1,16 +1,11 @@
 #pragma once
 #include <WinSock2.h>
 
-struct ACCEPT_SOCKET_INFO
-{
-	SOCKET		socket;
-	SOCKADDR_IN	addr;
-};
-
 class CTcpListener
 {
 protected:
-	ACCEPT_SOCKET_INFO m_socket_info;
+	SOCKET		m_socket;
+	SOCKADDR_IN	m_addr;
 
 public:
 	CTcpListener();
@@ -19,5 +14,5 @@ public:
 
 	bool Start();
 
-	SOCKET GetSocket() { return m_socket_info.socket; }
+	SOCKET GetSocket() { return m_socket; }
 };

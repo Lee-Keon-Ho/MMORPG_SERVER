@@ -7,9 +7,9 @@ CSession::CSession()
 	
 }
 
-CSession::CSession(SOCKET _socket)
+CSession::CSession(ACCEPT_SOCKET_INFO _socketInfo)
 {
-	m_socket_info.socket = _socket;
+	m_socket_info = _socketInfo;
 	m_ringBuffer = new CRingBuffer(BUFFER_MAX);
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
@@ -20,22 +20,6 @@ CSession::~CSession()
 {
 	if (m_ringBuffer) { delete m_ringBuffer; m_ringBuffer = nullptr; }
 	closesocket(m_socket_info.socket);
-}
-
-bool CSession::Recv()
-{
-	DWORD recvBytes = 0;
-	DWORD flags = 0;
-	DWORD err;
-
-	if (WSARecv(m_socket_info.socket, &m_dataBuf, 1, &recvBytes, &flags, &m_overlapped, NULL) == SOCKET_ERROR)
-	{
-		if (err = WSAGetLastError() != WSA_IO_PENDING) // trow
-		{
-			return false;
-		}
-	}
-	return true;
 }
 
 bool CSession::Send(char* _buffer, int _size)
@@ -70,14 +54,6 @@ int CSession::RecvHandle(DWORD _size)
 	Recv();
 
 	return 0;
-}
-
-int CSession::PacketHandle()
-{
-	// Player을 만들어서 
-	// PacketHandle을 싱글톤을 만들어서 사용 override 할 부분
-	// player에서 PacketHandle을 싱글톤으로 만들어서 사용
-	return 0; 
 }
 
 void CSession::SetAddr(SOCKADDR_IN _addr)

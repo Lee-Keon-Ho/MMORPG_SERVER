@@ -3,6 +3,8 @@
 
 class CWorkerThread
 {
+private:
+	HANDLE m_threadId;
 public:
 	CWorkerThread();
 	~CWorkerThread();

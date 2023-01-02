@@ -10,23 +10,23 @@ CTcpListener::CTcpListener()
 CTcpListener::CTcpListener(PCSTR _ip, u_short _port)
 {
 	// 예외
-	m_socket_info.socket = WSASocketW(PF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	m_socket = WSASocketW(PF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 
-	m_socket_info.addr.sin_family = AF_INET;
-	inet_pton(AF_INET, _ip, &m_socket_info.addr.sin_addr);
-	m_socket_info.addr.sin_port = htons(_port);
-	bind(m_socket_info.socket, (sockaddr*)&m_socket_info.addr, sizeof(sockaddr_in));
+	m_addr.sin_family = AF_INET;
+	inet_pton(AF_INET, _ip, &m_addr.sin_addr);
+	m_addr.sin_port = htons(_port);
+	bind(m_socket, (sockaddr*)&m_addr, sizeof(sockaddr_in));
 }
 
 CTcpListener::~CTcpListener()
 {
-	closesocket(m_socket_info.socket);
+	closesocket(m_socket);
 }
 
 bool CTcpListener::Start()
 {
 	// 여기도 예외
-	if (listen(m_socket_info.socket, SOMAXCONN) == SOCKET_ERROR)
+	if (listen(m_socket, SOMAXCONN) == SOCKET_ERROR)
 	{
 		return false;
 	}

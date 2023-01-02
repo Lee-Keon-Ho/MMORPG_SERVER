@@ -11,7 +11,6 @@ public:
 	CFieldApp();
 	~CFieldApp();
 
-	ACCEPT_SOCKET_INFO Accept();
 	bool ThreadStart();
 public:
 	bool Initialize() override;
