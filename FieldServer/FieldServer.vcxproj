@@ -142,6 +142,7 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="CUser.cpp" />
     <ClCompile Include="FieldApp.cpp" />
+    <ClCompile Include="FieldServerAccept.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PacketHandler.cpp" />
   </ItemGroup>
@@ -149,6 +150,7 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="CUser.h" />
     <ClInclude Include="FieldApp.h" />
+    <ClInclude Include="FieldServerAccept.h" />
     <ClInclude Include="PacketHandler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

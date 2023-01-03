@@ -2,7 +2,7 @@
 #include "IOCP.h"
 #include "overlapped_ex.h"
 #include <process.h>
-
+#include <stdio.h>
 CWorkerThread::CWorkerThread()
 {
 }
@@ -13,8 +13,12 @@ CWorkerThread::~CWorkerThread()
 
 bool CWorkerThread::Start()
 {
-	//예외 처림? if문?
-	//HANDLE handle = (HANDLE)_beginthreadex(NULL, 0, &CWorkerThread::ThreadFunc, this, 0, NULL);
+	m_threadId = (HANDLE)_beginthreadex(NULL, 0, &CWorkerThread::ThreadFunc, this, 0, NULL);
+	if (m_threadId == 0)
+	{
+		printf("Thread Error\n");
+		return false;
+	}
 	return true;
 }
 
@@ -32,24 +36,15 @@ void CWorkerThread::RunLoop()
 	HANDLE hIOCP = CIocp::GetInstance()->GetHandle();
 	DWORD bytesTrans;
 	overlapped_ex overlapped;
-	CSession* pSession;
 
 	while (1)
 	{
 		if (!GetQueuedCompletionStatus(hIOCP, &bytesTrans, (PULONG_PTR)&overlapped.session, (LPOVERLAPPED*)&overlapped, INFINITE))
 		{
-			//delete pSession; // 갑자기 지우면 안된다.
-			//continue;
+			continue;
 		}
 
 		//printf("recv ok %ld : %ld \n", pSession->GetSocket(), bytesTrans);
-		
-		//pSession->RecvHandle(bytesTrans);
 		overlapped.session->RecvHandle(bytesTrans);
-
-		/*if (state < 0)
-		{
-			delete pSession;
-		}*/
 	}
 }

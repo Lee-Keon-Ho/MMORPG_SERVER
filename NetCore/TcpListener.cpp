@@ -25,7 +25,6 @@ CTcpListener::~CTcpListener()
 
 bool CTcpListener::Start()
 {
-	// 여기도 예외
 	if (listen(m_socket, SOMAXCONN) == SOCKET_ERROR)
 	{
 		return false;

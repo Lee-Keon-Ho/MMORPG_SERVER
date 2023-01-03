@@ -1,5 +1,6 @@
 #include "CUser.h"
 #include "PacketHandler.h"
+#include <stdio.h>
 
 CUser::CUser()
 {
@@ -24,7 +25,7 @@ bool CUser::Recv()
 	{
 		if (err = WSAGetLastError() != WSA_IO_PENDING)
 		{
-			//printf("Error WSARecv : %d \n", err);
+			printf("Error WSARecv : %d \n", err);
 			return false;
 		}
 	}
@@ -34,4 +35,9 @@ bool CUser::Recv()
 int CUser::PacketHandle()
 {
 	return CPacketHandler::GetInstance()->Handle(this);
+}
+
+char* CUser::GetPacketBuffer()
+{
+	return m_overlapped.session->GetPacketBuffer();
 }

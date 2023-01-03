@@ -26,7 +26,7 @@ bool CSession::Send(char* _buffer, int _size)
 {
 	int sendSize = send(m_socket_info.socket, _buffer, _size, 0);
 
-	if (sendSize < 0) return false; // try?? 
+	if (sendSize < 0) return false;
 
 	return true;
 }
@@ -37,16 +37,18 @@ int CSession::RecvHandle(DWORD _size)
 
 	m_ringBuffer->Write(_size);
 
-	while (true)
-	{
-		size = PacketHandle();
+	//while (true)
+	//{
+	//	// 사라지고 바로 Recv 다시 걸고
 
-		if (size < 0) return size;
+	//	//size = PacketHandle();
 
-		m_ringBuffer->Read(size);
+	//	//if (size < 0) return size;
 
-		if (m_ringBuffer->GetReadSize() == 0) break;
-	}
+	//	//m_ringBuffer->Read(size);
+
+	//	if (m_ringBuffer->GetReadSize() == 0) break;
+	//}
 
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
@@ -56,22 +58,22 @@ int CSession::RecvHandle(DWORD _size)
 	return 0;
 }
 
-void CSession::SetAddr(SOCKADDR_IN _addr)
-{
-	m_socket_info.addr = _addr;
-}
-
 SOCKET CSession::GetSocket()
 {
 	return m_socket_info.socket;
 }
 
-CRingBuffer* CSession::GetRingBuffer()
-{
-	return m_ringBuffer;
-}
-
 SOCKADDR_IN CSession::GetAddr()
 {
 	return m_socket_info.addr;
+}
+
+char* CSession::GetPacketBuffer()
+{
+	return m_ringBuffer->GetPacketBuffer();
+}
+
+int CSession::GetReadSize()
+{
+	return m_ringBuffer->GetReadSize();
 }

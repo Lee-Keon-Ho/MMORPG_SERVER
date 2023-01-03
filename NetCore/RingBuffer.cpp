@@ -77,3 +77,22 @@ void CRingBuffer::Read(int _size)
 		m_remainDataSize -= _size;
 	}
 }
+
+char* CRingBuffer::GetPacketBuffer()
+{
+	char* readBuffer = m_pRead;
+	int read_EndBuf = GetRemainSize_EndBuffer(readBuffer);
+	int readSize = GetReadSize();
+
+	if (readSize > read_EndBuf)
+	{
+		char tempBuffer[1000];
+		memcpy(tempBuffer, readBuffer, read_EndBuf);
+		memcpy(tempBuffer + read_EndBuf, m_buffer, readSize - read_EndBuf);
+		readBuffer = tempBuffer;
+	}
+
+	if (readSize == 0) return nullptr;
+
+	return readBuffer;
+}

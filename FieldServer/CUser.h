@@ -13,4 +13,5 @@ public:
 
 	bool Recv() override;
 	int PacketHandle();
+	char* GetPacketBuffer();
 };

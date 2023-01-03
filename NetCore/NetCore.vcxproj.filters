@@ -36,6 +36,9 @@
     <ClInclude Include="ThreadManager.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="acceptThread.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TcpListener.cpp">
@@ -54,6 +57,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ThreadManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="acceptThread.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

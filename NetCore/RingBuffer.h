@@ -36,4 +36,6 @@ public:
 	char* GetReadBuffer() { return m_pRead; }
 
 	int GetRemainSize_EndBuffer(const char* _pBuffer) { return (int)(m_pBufferEnd - _pBuffer); }
+
+	char* GetPacketBuffer();
 };

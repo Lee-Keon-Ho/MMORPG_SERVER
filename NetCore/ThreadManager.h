@@ -13,5 +13,5 @@ public:
 	CThreadManager();
 	~CThreadManager();
 
-	bool Init(int _size);
+	bool Start(int _size);
 };

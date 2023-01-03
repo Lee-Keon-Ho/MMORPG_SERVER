@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="acceptThread.h" />
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="overlapped_ex.h" />
     <ClInclude Include="RingBuffer.h" />
@@ -152,6 +153,7 @@
     <ClInclude Include="workerThread.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="acceptThread.cpp" />
     <ClCompile Include="IOCP.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="session.cpp" />
