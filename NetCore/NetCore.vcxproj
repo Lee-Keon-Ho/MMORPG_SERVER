@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClCompile Include="acceptThread.cpp" />
     <ClCompile Include="IOCP.cpp" />
+    <ClCompile Include="overlapped_ex.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="session.cpp" />
     <ClCompile Include="TcpListener.cpp" />

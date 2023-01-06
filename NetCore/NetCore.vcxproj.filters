@@ -30,13 +30,13 @@
     <ClInclude Include="workerThread.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="overlapped_ex.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="ThreadManager.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
     <ClInclude Include="acceptThread.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="overlapped_ex.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -60,6 +60,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="acceptThread.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="overlapped_ex.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

@@ -2,6 +2,11 @@
 #include <WinSock2.h>
 #include "RingBuffer.h"
 
+struct overlapped_ex : WSAOVERLAPPED
+{
+	CSession* session;
+};
+
 struct ACCEPT_SOCKET_INFO
 {
 	SOCKET		socket;
@@ -14,7 +19,7 @@ protected:
 	WSABUF m_dataBuf;
 	ACCEPT_SOCKET_INFO m_socket_info;
 	
-	// overlapped_ex m_overlapped;
+	overlapped_ex m_overlapped;
 
 	CRingBuffer* m_ringBuffer;
 public:
@@ -23,9 +28,10 @@ public:
 	virtual ~CSession();
 
 	bool Send(char* _buffer, int _size);
+	bool Recv();
+
 	int RecvHandle(DWORD _size);
 
-	virtual bool Recv() = 0; // 가상함수로 만들 필요없이 session
 	virtual int PacketHandle() = 0;
 
 	SOCKET GetSocket();

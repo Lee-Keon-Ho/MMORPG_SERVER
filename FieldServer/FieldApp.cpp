@@ -1,7 +1,8 @@
 #include "FieldApp.h"
 #include "../NetCore/IOCP.h"
 #include "../NetCore/workerThread.h"
-#include "CUser.h"
+#include "UserManager.h"
+#include "User.h"
 #include <stdio.h>
 
 #pragma comment (lib, "./../x64/Debug/NetCore.lib")
@@ -34,6 +35,11 @@ bool CFieldApp::CreateInstance()
 	if (m_pThreadManager == nullptr) m_pThreadManager = new CThreadManager();
 	if (!m_pThreadManager) return false;
 
+	if (m_pFieldServerAccept == nullptr) m_pFieldServerAccept = new CFieldServerAccept(m_pListener->GetSocket());
+	if (!m_pFieldServerAccept) return false;
+
+	//m_pFieldServerAccept = new CFieldServerAccept(new CTcpListener("183.108.148.83", 30002));
+
 	return true;
 }
 
@@ -43,37 +49,35 @@ bool CFieldApp::StartInstance()
 	GetSystemInfo(&si);
 
 	if (!m_pThreadManager->Start(si.dwNumberOfProcessors * 2)) return false;
+	if (!m_pFieldServerAccept->Start()) return false;
 	if (!m_pListener->Start()) return false;
-	
+
 	printf("server start...\n");
 	return true;
 }
 
 void CFieldApp::RunLoop()
 {
-	while (true) // 01-03 지금은 비어있는 걸로
+	CUser* pUser = nullptr;
+
+	while (true)
 	{
-		// UserHandler 모아서 처리
-		// 모든 user Vector
-		while (true)
+		m_user;// = CUserManager::GetInstatnce();
+
+		std::vector<CUser*>::iterator iter = m_user.begin();
+		std::vector<CUser*>::iterator iterEnd = m_user.end();
+
+		for (; iter != iterEnd; iter++)
 		{
-			//if (user->GetReadSize() > 0) PakcetHandle();
-
-			//if(user->GetReadSize() == 0 ) break;
+			pUser = *iter;
+			while (true)
+			{
+				if (pUser->GetReadSize() > 0) pUser->PacketHandle();
+				else break;
+			}
 		}
-		
 
-		// accept Thread 아직도 잘 모르겠다 명확해야한다.
-		
-		ACCEPT_SOCKET_INFO socketInfo;
-		int size = sizeof(sockaddr_in);
-
-		socketInfo.socket = accept(m_pListener->GetSocket(), (sockaddr*)&socketInfo.addr, &size);
-
-		CUser* pUser = new CUser(socketInfo);
-		CIocp::GetInstance()->Associate(socketInfo.socket);
-
-		pUser->Recv();// OnConnect() 뭔가 설정할게 있다면 // player Map을 이용
+		Sleep(1);
 	}
 }
 
