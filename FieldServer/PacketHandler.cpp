@@ -1,5 +1,5 @@
 #include "PacketHandler.h"
-#include "CUser.h"
+#include "User.h"
 
 CPacketHandler::CPacketHandler()
 {

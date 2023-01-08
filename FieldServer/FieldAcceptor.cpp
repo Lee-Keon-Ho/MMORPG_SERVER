@@ -1,41 +1,37 @@
-#include "FieldServerAccept.h"
+#include "FieldAcceptor.h"
 #include "UserManager.h"
 #include <process.h>
 #include <stdio.h>
 
-CFieldServerAccept::CFieldServerAccept()
+CFieldAcceptor::CFieldAcceptor()
 {
 }
 
-CFieldServerAccept::CFieldServerAccept(SOCKET _socket) : CAcceptThread(_socket)
+CFieldAcceptor::CFieldAcceptor(PCSTR _ip, u_short _port)
+	: CTcpListener(_ip, _port), CAcceptThread(m_socket)
+{
+	
+}
+
+CFieldAcceptor::~CFieldAcceptor()
 {
 }
 
-CFieldServerAccept::~CFieldServerAccept()
+bool CFieldAcceptor::Start()
 {
-}
-
-bool CFieldServerAccept::Start()
-{
-	m_threadId = (HANDLE)_beginthreadex(NULL, 0, &CFieldServerAccept::AcceptFunc, this, 0, NULL);
+	m_threadId = (HANDLE)_beginthreadex(NULL, 0, &CFieldAcceptor::AcceptFunc, this, 0, NULL);
 	if (m_threadId == 0)
 	{
 		printf("Thread Error\n");
 		return false;
 	}
+
+	if (!CTcpListener::Start()) return false;
+
 	return true;
 }
 
-unsigned int _stdcall CFieldServerAccept::AcceptFunc(void* _pArgs)
-{
-	CFieldServerAccept* thread = (CFieldServerAccept*)_pArgs;
-
-	thread->RunLoop();
-
-	return 0;
-}
-
-void CFieldServerAccept::RunLoop()
+void CFieldAcceptor::RunLoop()
 {
 	ACCEPT_SOCKET_INFO socketInfo;
 	int size = sizeof(sockaddr_in);

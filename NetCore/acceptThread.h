@@ -13,5 +13,6 @@ public:
 	~CAcceptThread();
 
 	virtual bool Start() = 0;
+	static unsigned int _stdcall AcceptFunc(void* _pArgs);
 	virtual void RunLoop() = 0;
 };

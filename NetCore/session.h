@@ -2,6 +2,8 @@
 #include <WinSock2.h>
 #include "RingBuffer.h"
 
+class CSession;
+
 struct overlapped_ex : WSAOVERLAPPED
 {
 	CSession* session;

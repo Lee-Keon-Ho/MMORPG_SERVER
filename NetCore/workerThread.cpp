@@ -1,6 +1,6 @@
+#include "../NetCore/session.h"
 #include "workerThread.h"
 #include "IOCP.h"
-#include "overlapped_ex.h"
 #include <process.h>
 #include <stdio.h>
 CWorkerThread::CWorkerThread()

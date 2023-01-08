@@ -1,19 +1,17 @@
 #pragma once
-#include "../NetCore/TcpListener.h"
 #include "../NetCore/ThreadManager.h"
 #include "App.h"
-#include "FieldServerAccept.h"
-#include <vector>
+#include "FieldAcceptor.h"
+#include <list>
 
 class CFieldApp : public CApp
 {
 public:
-	typedef std::vector<CUser*> t_user; // 절대 안나가면 vector가 좋다 // 수업 : 필요없다
+	typedef std::list<CUser*> t_user; // 절대 안나가면 vector가 좋다 // 수업 : 필요없다
 
 private:
-	CTcpListener* m_pListener;
 	CThreadManager* m_pThreadManager;
-	CFieldServerAccept* m_pFieldServerAccept;
+	CFieldAcceptor* m_pFieldAcceptor;
 
 	t_user m_user; // 필요없다
 public:
