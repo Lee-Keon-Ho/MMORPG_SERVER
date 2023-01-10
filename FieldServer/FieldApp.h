@@ -13,7 +13,7 @@ private:
 	CThreadManager* m_pThreadManager;
 	CFieldAcceptor* m_pFieldAcceptor;
 
-	t_user m_user; // 필요없다
+	t_user m_user; // 필요없다 // 싱글톤으로 만들자
 public:
 	CFieldApp();
 	~CFieldApp();

@@ -9,9 +9,9 @@ CPacketHandler::~CPacketHandler()
 {
 }
 
-int CPacketHandler::Handle(CUser* _user)
+int CPacketHandler::Handle(CUser* _user) // buffer
 {
-	char* readBuffer = _user->GetPacketBuffer();
+	char* readBuffer = _user->GetPacketBuffer(); // 밖에서 차단이 더 좋을거 같다
 
 	if (readBuffer == nullptr) return -1;
 

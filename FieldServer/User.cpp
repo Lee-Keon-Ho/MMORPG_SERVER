@@ -16,5 +16,10 @@ CUser::~CUser()
 
 int CUser::PacketHandle()
 {
-	return CPacketHandler::GetInstance()->Handle(this);
+	int readSize = CPacketHandler::GetInstance()->Handle(this);
+
+	m_ringBuffer->Read(readSize);
+
+	return m_ringBuffer->GetReadSize();
+	//return CPacketHandler::GetInstance()->Handle(this);
 }

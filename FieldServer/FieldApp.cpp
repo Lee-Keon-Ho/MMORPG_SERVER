@@ -35,8 +35,6 @@ bool CFieldApp::CreateInstance()
 	if (m_pThreadManager == nullptr) m_pThreadManager = new CThreadManager();
 	if (!m_pThreadManager) return false;
 
-	//m_pFieldServerAccept = new CFieldServerAccept(new CTcpListener("183.108.148.83", 30002));
-
 	return true;
 }
 
@@ -58,20 +56,7 @@ void CFieldApp::RunLoop()
 
 	while (true)
 	{
-		m_user;// = CUserManager::GetInstatnce();
-
-		std::list<CUser*>::iterator iter = m_user.begin();
-		std::list<CUser*>::iterator iterEnd = m_user.end();
-
-		for (; iter != iterEnd; iter++)
-		{
-			pUser = *iter;
-			while (true)
-			{
-				if (pUser->GetReadSize() > 0) pUser->PacketHandle();
-				else break;
-			}
-		}
+		CUserManager::GetInstance()->OnPacket();
 
 		Sleep(1);
 	}

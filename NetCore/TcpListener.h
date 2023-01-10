@@ -13,6 +13,4 @@ public:
 	~CTcpListener();
 
 	bool Start();
-
-	SOCKET GetSocket() { return m_socket; }
 };

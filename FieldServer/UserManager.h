@@ -5,7 +5,7 @@
 class CUserManager
 {
 public:
-	static CUserManager* GetInstatnce()
+	static CUserManager* GetInstance()
 	{
 		static CUserManager instance;
 		return &instance;
@@ -21,7 +21,9 @@ public:
 private:
 	userList_t m_userList;
 
+	CRITICAL_SECTION m_cs_user;
 public:
-	void Add(CUser* _user);
+	void Add(CUser* _pUser);
+	void Del(CUser* _pUser);
+	void OnPacket();
 };
-

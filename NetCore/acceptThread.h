@@ -5,7 +5,7 @@ class CAcceptThread
 {
 protected:
 	HANDLE m_threadId;
-	SOCKET m_tcpSocket;
+	SOCKET m_tcpSocket; // 필요없음
 
 public:
 	CAcceptThread();
