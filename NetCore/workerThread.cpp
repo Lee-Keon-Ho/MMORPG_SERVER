@@ -35,16 +35,30 @@ void CWorkerThread::RunLoop()
 {
 	HANDLE hIOCP = CIocp::GetInstance()->GetHandle();
 	DWORD bytesTrans;
-	overlapped_ex overlapped;
+	overlapped_ex* overlapped;
+	int bin;
 
 	while (1)
 	{
-		if (!GetQueuedCompletionStatus(hIOCP, &bytesTrans, (PULONG_PTR)&overlapped.session, (LPOVERLAPPED*)&overlapped, INFINITE))
+		if (!GetQueuedCompletionStatus(hIOCP, &bytesTrans, (PULONG_PTR)&bin, (LPOVERLAPPED*)&overlapped, INFINITE))
 		{
+			// 실패를 했으면 io작업중 하나가 실패한 것이니 그것을 확인해야 한다
+			// 확인을 했으면 그것에 맞는 처리를 해줘야한다.
+
+			printf("%d\n", GetLastError()); // 끊긴거를 100% 알수없다
+			
 			continue;
 		}
 
-		//printf("recv ok %ld : %ld \n", pSession->GetSocket(), bytesTrans);
-		overlapped.session->RecvHandle(bytesTrans);
+		if (bytesTrans <= 0)
+		{
+			delete overlapped->session;
+		}
+		else
+		{
+			printf("socket : %d bytesTrans : %d\n", overlapped->session->GetSocket(), bytesTrans);
+			overlapped->session->RecvHandle(bytesTrans);
+		}
+		
 	}
 }

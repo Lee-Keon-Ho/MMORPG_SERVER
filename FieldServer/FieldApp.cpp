@@ -52,12 +52,10 @@ bool CFieldApp::StartInstance()
 
 void CFieldApp::RunLoop()
 {
-	CUser* pUser = nullptr;
-
 	while (true)
 	{
 		CUserManager::GetInstance()->OnPacket();
-
+		//CUserManager::GetInstance()->Del();
 		Sleep(1);
 	}
 }

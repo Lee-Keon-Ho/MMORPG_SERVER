@@ -24,6 +24,6 @@ private:
 	CRITICAL_SECTION m_cs_user;
 public:
 	void Add(CUser* _pUser);
-	void Del(CUser* _pUser);
+	void Del();
 	void OnPacket();
 };

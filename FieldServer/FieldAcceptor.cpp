@@ -8,7 +8,7 @@ CFieldAcceptor::CFieldAcceptor()
 }
 
 CFieldAcceptor::CFieldAcceptor(PCSTR _ip, u_short _port)
-	: CTcpListener(_ip, _port), CAcceptThread(m_socket)
+	: CTcpListener(_ip, _port), CAcceptThread()
 {
 	
 }
@@ -38,18 +38,16 @@ void CFieldAcceptor::RunLoop()
 
 	DWORD bytesTrans;
 
-	//CListener* m_listener;
-
 	while (1)
 	{
 		socketInfo.socket = accept(m_socket, (sockaddr*)&socketInfo.addr, &size);
+
+		printf("socket : %d \n", socketInfo.socket); // 임시
 
 		CUser* user = new CUser(socketInfo);
 
 		CUserManager::GetInstance()->Add(user);
 		// 동기화의 문제점
-		// OnConnect() 뭔가 설정할게 있다면 // player Map을 이용
-		//m_listener->Handle(void* _data);
+		// OnConnect() 뭔가 설정할게 있다면
 	}
 }
-

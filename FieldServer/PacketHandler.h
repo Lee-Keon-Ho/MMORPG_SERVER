@@ -12,9 +12,9 @@ public:
 	}
 
 public:
-	/*typedef void(*tFunc) (CUser* _user, char* _buffer);
-		함수 포인터 사용시 인자를 통일해야한다.
-	tFunc m_lpfp;*/
+	typedef void (*tFunc) (CUser* _user, char* _buffer);
+		
+	tFunc m_lpfp;
 private:
 	CPacketHandler();
 	~CPacketHandler();
@@ -22,4 +22,7 @@ private:
 
 public:
 	int Handle(CUser* _user);
+
+	void test(CUser* _user, char* _buffer);
+	void test1(CUser* _user, char* _buffer);
 };

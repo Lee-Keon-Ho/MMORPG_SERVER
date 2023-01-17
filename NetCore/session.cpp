@@ -61,19 +61,14 @@ int CSession::RecvHandle(DWORD _size)
 
 	m_ringBuffer->Write(_size);
 
-	//while (true)
-	//{
-	//	// 사라지고 바로 Recv 다시 걸고
+	/*
+	if (m_ringBuffer->GetReadBuffer() != nullptr)
+	{
+		Send(m_ringBuffer->GetReadBuffer(), _size);
+	}
 
-	//	//size = PacketHandle();
-
-	//	//if (size < 0) return size;
-
-	//	//m_ringBuffer->Read(size);
-
-	//	if (m_ringBuffer->GetReadSize() == 0) break;
-	//}
-
+	m_ringBuffer->Read(_size);
+	*/
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
 

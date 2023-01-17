@@ -12,34 +12,50 @@ CUserManager::~CUserManager()
 
 void CUserManager::Add(CUser* _pUser)
 {
+	EnterCriticalSection(&m_cs_user);
 	m_userList.push_back(_pUser);
+	LeaveCriticalSection(&m_cs_user);
 }
 
-void CUserManager::Del(CUser* _pUser)
-{
-	
-}
-
-void CUserManager::OnPacket() // 이전 구조가 더 좋다
+void CUserManager::Del()
 {
 	EnterCriticalSection(&m_cs_user);
 	std::list<CUser*>::iterator iter = m_userList.begin();
 	std::list<CUser*>::iterator iterEnd = m_userList.end();
+	CUser* pUser;
+	for (; iter != iterEnd; )
+	{
+		pUser = *iter;
+		
+		if (pUser->GetLogOut())
+		{
+			iter = m_userList.erase(iter);
+		}
+		else iter++;
+	}
+	LeaveCriticalSection(&m_cs_user);
+}
+
+void CUserManager::OnPacket() // 이전 구조가 더 좋다
+{
+	//EnterCriticalSection(&m_cs_user);
+	std::list<CUser*>::iterator iter = m_userList.begin();
+	std::list<CUser*>::iterator iterEnd = m_userList.end();
+
+	if (iter == iterEnd) return;
 
 	CUser* pUser = nullptr;
 
-	for (; iter != iterEnd; iter++)
-	{
-		pUser = *iter;
-		while (true) // 구조를 조금 더 생각해 보자, Packet이 있는지 확인하는 법 생각해보자
-		{
-			//if( pUser->GetPacketBuffer() != nullptr )
+	pUser = *iter;
+	pUser->PacketHandle();
 
-			if (pUser->PacketHandle() <= 0) break; //HandlePacket
-
-			//if (pUser->GetReadSize() > 0) pUser->PacketHandle(); // ReadSize 조절
-			//else break;
-		}
-	}
-	LeaveCriticalSection(&m_cs_user);
+	//for (; iter != iterEnd; iter++) // 지우고 나면 다음 값을 확인할 수 없다
+	//{
+	//	pUser = *iter;
+	//	while (true) // 구조를 조금 더 생각해 보자, Packet이 있는지 확인하는 법 생각해보자
+	//	{
+	//		if (pUser->PacketHandle() <= 0) break; //HandlePacket
+	//	}
+	//}
+	//LeaveCriticalSection(&m_cs_user);
 }

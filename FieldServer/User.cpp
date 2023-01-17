@@ -6,7 +6,7 @@ CUser::CUser()
 {
 }
 
-CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : CSession(_socketInfo)
+CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : CSession(_socketInfo), m_bLogOut(false)
 {
 }
 
@@ -18,7 +18,7 @@ int CUser::PacketHandle()
 {
 	int readSize = CPacketHandler::GetInstance()->Handle(this);
 
-	m_ringBuffer->Read(readSize);
+	if(readSize > 0) m_ringBuffer->Read(readSize);
 
 	return m_ringBuffer->GetReadSize();
 	//return CPacketHandler::GetInstance()->Handle(this);
