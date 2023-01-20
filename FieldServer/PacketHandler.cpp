@@ -49,12 +49,12 @@ void CPacketHandler::test(CUser* _user, char* _buffer)
 	char sendBuffer[100];
 	char* tempBuffer = sendBuffer;
 
-	*(USHORT*)tempBuffer = 4 + sizeof(DWORD);
+	*(USHORT*)tempBuffer = 4;
 	tempBuffer += 2;
 	*(USHORT*)tempBuffer = 0;
 	tempBuffer += 2;
 	*(DWORD*)tempBuffer = time;
-	tempBuffer += sizeof(DWORD);
+	tempBuffer += 4;
 
 	_user->Send(sendBuffer, tempBuffer - sendBuffer);
 }

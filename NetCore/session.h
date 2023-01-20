@@ -32,7 +32,7 @@ public:
 	bool Send(char* _buffer, int _size);
 	bool Recv();
 
-	int RecvHandle(DWORD _size);
+	void RecvHandle(DWORD _size);
 
 	virtual int PacketHandle() = 0;
 

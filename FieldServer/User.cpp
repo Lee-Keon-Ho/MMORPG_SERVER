@@ -16,10 +16,15 @@ CUser::~CUser()
 
 int CUser::PacketHandle()
 {
+	// 바로 처리
 	int readSize = CPacketHandler::GetInstance()->Handle(this);
+
+	if (readSize > 100)
+	{
+		printf("Eerro\n");
+	}
 
 	if(readSize > 0) m_ringBuffer->Read(readSize);
 
-	return m_ringBuffer->GetReadSize();
-	//return CPacketHandler::GetInstance()->Handle(this);
+	return 0;
 }

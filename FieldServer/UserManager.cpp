@@ -47,7 +47,7 @@ void CUserManager::OnPacket() // 이전 구조가 더 좋다
 	CUser* pUser = nullptr;
 
 	pUser = *iter;
-	pUser->PacketHandle();
+	pUser->PacketHandle(); // 누적으로 처리할 경우 다른 이름의 함수가 필요하다
 
 	//for (; iter != iterEnd; iter++) // 지우고 나면 다음 값을 확인할 수 없다
 	//{

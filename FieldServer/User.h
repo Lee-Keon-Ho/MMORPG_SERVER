@@ -10,7 +10,7 @@ public:
 	CUser(ACCEPT_SOCKET_INFO _socketInfo);
 	~CUser();
 
-	int PacketHandle();
+	int PacketHandle() override;
 	void SetLogOut(bool _bLogOut) { m_bLogOut = _bLogOut; }
 	bool GetLogOut() { return m_bLogOut; }
 };

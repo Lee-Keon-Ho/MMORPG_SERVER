@@ -55,26 +55,24 @@ bool CSession::Recv()
 	return true;
 }
 
-int CSession::RecvHandle(DWORD _size)
+void CSession::RecvHandle(DWORD _size)
 {
-	int size;
+	int size = *(USHORT*)m_ringBuffer->GetWriteBuffer();
+
+	if (_size > size)
+	{
+		printf("bytesTrans : %d // recvSize : %d\n", _size, size);
+	}
 
 	m_ringBuffer->Write(_size);
 
-	/*
-	if (m_ringBuffer->GetReadBuffer() != nullptr)
-	{
-		Send(m_ringBuffer->GetReadBuffer(), _size);
-	}
+	PacketHandle();
 
-	m_ringBuffer->Read(_size);
-	*/
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
 
 	Recv();
 
-	return 0;
 }
 
 SOCKET CSession::GetSocket()

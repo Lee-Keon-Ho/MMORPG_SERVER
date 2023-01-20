@@ -54,7 +54,7 @@ void CFieldApp::RunLoop()
 {
 	while (true)
 	{
-		CUserManager::GetInstance()->OnPacket();
+		//CUserManager::GetInstance()->OnPacket();
 		//CUserManager::GetInstance()->Del();
 		Sleep(1);
 	}
