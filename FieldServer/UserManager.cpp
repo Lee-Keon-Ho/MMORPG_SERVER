@@ -59,3 +59,8 @@ void CUserManager::OnPacket() // 이전 구조가 더 좋다
 	//}
 	//LeaveCriticalSection(&m_cs_user);
 }
+
+int CUserManager::GetUserCount()
+{
+	return m_userList.size();
+}

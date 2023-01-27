@@ -19,12 +19,16 @@ int CUser::PacketHandle()
 	// 바로 처리
 	int readSize = CPacketHandler::GetInstance()->Handle(this);
 
-	if (readSize > 100)
+	if (readSize > 100) // readsize -1 Eerro 표시
 	{
 		printf("Eerro\n");
 	}
 
-	if(readSize > 0) m_ringBuffer->Read(readSize);
+	if (readSize > 0)
+	{
+		m_ringBuffer->Read(readSize);
+		return readSize;
+	}
 
 	return 0;
 }

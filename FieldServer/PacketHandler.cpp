@@ -14,7 +14,7 @@ int CPacketHandler::Handle(CUser* _user) // buffer
 {
 	char* readBuffer = _user->GetPacketBuffer(); // 밖에서 차단이 더 좋을거 같다
 
-	if (readBuffer == nullptr) return -1;
+	if (readBuffer == nullptr) return 0;
 
 	USHORT size = *(USHORT*)readBuffer;
 	readBuffer += sizeof(USHORT);
@@ -49,12 +49,14 @@ void CPacketHandler::test(CUser* _user, char* _buffer)
 	char sendBuffer[100];
 	char* tempBuffer = sendBuffer;
 
-	*(USHORT*)tempBuffer = 4;
+	*(USHORT*)tempBuffer = 4 + 4 + 2;
 	tempBuffer += 2;
 	*(USHORT*)tempBuffer = 0;
 	tempBuffer += 2;
 	*(DWORD*)tempBuffer = time;
 	tempBuffer += 4;
+	*(USHORT*)tempBuffer = CUserManager::GetInstance()->GetUserCount();
+	tempBuffer += 2;
 
 	_user->Send(sendBuffer, tempBuffer - sendBuffer);
 }

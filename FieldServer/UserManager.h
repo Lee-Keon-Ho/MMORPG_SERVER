@@ -26,4 +26,6 @@ public:
 	void Add(CUser* _pUser);
 	void Del();
 	void OnPacket();
+
+	int GetUserCount();
 };

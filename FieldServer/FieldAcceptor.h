@@ -6,6 +6,7 @@
 
 // 다중 상속을 받든, TcpListener를 포함관계를 같든 구조를 다시 만들자
 
+// class 이름이 이상하다.
 class CFieldAcceptor : public CAcceptThread, CTcpListener
 {
 public:

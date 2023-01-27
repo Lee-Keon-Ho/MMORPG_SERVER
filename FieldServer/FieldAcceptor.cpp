@@ -21,12 +21,7 @@ bool CFieldAcceptor::Start()
 {
 	if (!CTcpListener::Start()) return false;
 
-	m_threadId = (HANDLE)_beginthreadex(NULL, 0, &CFieldAcceptor::AcceptFunc, this, 0, NULL);
-	if (m_threadId == 0)
-	{
-		printf("Thread Error\n");
-		return false;
-	}
+	if (!CAcceptThread::tStart()) return false;
 
 	return true;
 }

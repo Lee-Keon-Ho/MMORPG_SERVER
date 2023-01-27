@@ -2,7 +2,7 @@
 #include "IOCP.h"
 #include <stdio.h>
 
-#define BUFFER_MAX 1000
+#define BUFFER_MAX 100
 
 CSession::CSession()
 {
@@ -57,16 +57,14 @@ bool CSession::Recv()
 
 void CSession::RecvHandle(DWORD _size)
 {
-	int size = *(USHORT*)m_ringBuffer->GetWriteBuffer();
+	m_ringBuffer->Write(_size);
+
+	int size = PacketHandle();
 
 	if (_size > size)
 	{
 		printf("bytesTrans : %d // recvSize : %d\n", _size, size);
 	}
-
-	m_ringBuffer->Write(_size);
-
-	PacketHandle();
 
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
