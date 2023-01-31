@@ -1,19 +1,14 @@
 #pragma once
-#include "../NetCore/acceptThread.h"
-#include "../NetCore/TcpListener.h"
-#include "User.h"
-#include <vector>
+#include "../NetCore/TAcceptor.h"
 
-// 다중 상속을 받든, TcpListener를 포함관계를 같든 구조를 다시 만들자
-
-// class 이름이 이상하다.
-class CFieldAcceptor : public CAcceptThread, CTcpListener
+class CFieldAcceptor : public CTAcceptor
 {
+private:
+
 public:
-	CFieldAcceptor();
 	CFieldAcceptor(PCSTR _ip, u_short _port);
 	~CFieldAcceptor();
 
-	bool Start();
-	void RunLoop();
+	//bool Start();
+	void Handle(ACCEPT_SOCKET_INFO _socket) override;
 };

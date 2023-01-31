@@ -11,32 +11,18 @@ CWorkerThread::~CWorkerThread()
 {
 }
 
-bool CWorkerThread::Start(int _type)
+bool CWorkerThread::Start()
 {
-	m_type = _type;
-	if (_type == ALL)
+	m_threadId = (HANDLE)_beginthreadex(NULL, 0, &CWorkerThread::WorkerThreadFunc, this, 0, NULL);
+	if (m_threadId == 0)
 	{
-		m_threadId = (HANDLE)_beginthreadex(NULL, 0, &CWorkerThread::ThreadFunc, this, 0, NULL);
-		if (m_threadId == 0)
-		{
-			printf("Thread Error\n");
-			return false;
-		}
-		return true;
+		printf("Thread Error\n");
+		return false;
 	}
-	else
-	{
-		m_threadId = (HANDLE)_beginthreadex(NULL, 0, &CWorkerThread::ThreadFunc, this, 0, NULL);
-		if (m_threadId == 0)
-		{
-			printf("Thread Error\n");
-			return false;
-		}
-		return true;
-	}
+	return true;
 }
 
-unsigned int _stdcall CWorkerThread::ThreadFunc(void* _pArgs)
+unsigned int _stdcall CWorkerThread::WorkerThreadFunc(void* _pArgs)
 {
 	CWorkerThread* thread = (CWorkerThread*)_pArgs;
 
@@ -71,10 +57,6 @@ void CWorkerThread::RunLoop()
 		else
 		{
 			overlapped->session->RecvHandle(bytesTrans);
-			
-			//printf("socket : %d bytesTrans : %d\n", overlapped->session->GetSocket(), bytesTrans);
 		}
 	}
 }
-
-int CWorkerThread::GetType() { return m_type; }

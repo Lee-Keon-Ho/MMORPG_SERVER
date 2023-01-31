@@ -143,7 +143,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="acceptThread.h" />
+    <ClInclude Include="Acceptor.h" />
+    <ClInclude Include="TAcceptor.h" />
+    <ClInclude Include="Thread.h" />
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="session.h" />
@@ -152,7 +154,9 @@
     <ClInclude Include="workerThread.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="acceptThread.cpp" />
+    <ClCompile Include="Acceptor.cpp" />
+    <ClCompile Include="TAcceptor.cpp" />
+    <ClCompile Include="Thread.cpp" />
     <ClCompile Include="IOCP.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="session.cpp" />

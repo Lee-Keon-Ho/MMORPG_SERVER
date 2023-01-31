@@ -31,7 +31,6 @@ bool CFieldApp::CreateInstance()
 {
 	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("183.108.148.83", 30002);
 	if (!m_pFieldAcceptor) return false;
-
 	if (m_pThreadManager == nullptr) m_pThreadManager = new CThreadManager();
 	if (!m_pThreadManager) return false;
 
@@ -64,4 +63,9 @@ void CFieldApp::DeleteInstance()
 {
 	if (m_pFieldAcceptor) { delete m_pFieldAcceptor; m_pFieldAcceptor = nullptr; }
 	if (m_pThreadManager) { delete m_pThreadManager; m_pThreadManager = nullptr; }
+}
+
+void CFieldApp::Handle(ACCEPT_SOCKET_INFO _socket)
+{
+	CUser* pUser = new CUser(_socket);
 }

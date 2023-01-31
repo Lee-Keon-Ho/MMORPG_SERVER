@@ -3,10 +3,6 @@
 
 #pragma comment (lib, "ws2_32.lib")
 
-CTcpListener::CTcpListener()
-{
-}
-
 CTcpListener::CTcpListener(PCSTR _ip, u_short _port)
 {
 	// ¿¹¿Ü

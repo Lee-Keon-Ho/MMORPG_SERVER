@@ -8,9 +8,10 @@ protected:
 	SOCKADDR_IN	m_addr;
 
 public:
-	CTcpListener();
 	CTcpListener(PCSTR _ip, u_short _port);
 	~CTcpListener();
 
 	bool Start();
+
+	SOCKET GetSokcet() { return m_socket; }
 };

@@ -33,7 +33,13 @@
     <ClInclude Include="ThreadManager.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="acceptThread.h">
+    <ClInclude Include="Thread.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Acceptor.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TAcceptor.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,7 +62,13 @@
     <ClCompile Include="ThreadManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="acceptThread.cpp">
+    <ClCompile Include="Thread.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Acceptor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TAcceptor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

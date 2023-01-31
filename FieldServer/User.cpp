@@ -16,12 +16,11 @@ CUser::~CUser()
 
 int CUser::PacketHandle()
 {
-	// 바로 처리
 	int readSize = CPacketHandler::GetInstance()->Handle(this);
 
-	if (readSize > 100) // readsize -1 Eerro 표시
+	if (readSize > 100 || readSize < 0)
 	{
-		printf("Eerro\n");
+		printf("readSize Error : %d\n", readSize);
 	}
 
 	if (readSize > 0)
