@@ -28,4 +28,6 @@ public:
 	void OnPacket();
 
 	int GetUserCount();
+	void SendAll(char* _buffer, int _size);
+	userList_t GetUserList() { return m_userList; }
 };

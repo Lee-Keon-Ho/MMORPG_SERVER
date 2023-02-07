@@ -5,21 +5,15 @@
 CFieldAcceptor::CFieldAcceptor(PCSTR _ip, u_short _port)
 	: CTAcceptor(_ip, _port)
 {
-	
+	CTAcceptor::Start();
 }
 
 CFieldAcceptor::~CFieldAcceptor()
 {
 }
-/*
-bool CFieldAcceptor::Start()
-{
-	if (!CTAcceptor::Start()) return false;
 
-	return true;
-}
-*/
 void CFieldAcceptor::Handle(ACCEPT_SOCKET_INFO _socket)
 {
 	CUser* pUser = new CUser(_socket);
+	CUserManager::GetInstance()->Add(pUser);
 }

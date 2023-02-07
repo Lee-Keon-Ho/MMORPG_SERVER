@@ -6,7 +6,7 @@ CUser::CUser()
 {
 }
 
-CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : CSession(_socketInfo), m_bLogOut(false)
+CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : CSession(_socketInfo)
 {
 }
 
@@ -30,4 +30,9 @@ int CUser::PacketHandle()
 	}
 
 	return 0;
+}
+
+void CUser::SetPosition(POSITION _position)
+{
+	m_position = _position;
 }

@@ -43,7 +43,6 @@ bool CFieldApp::StartInstance()
 	GetSystemInfo(&si);
 
 	if (!m_pThreadManager->Start(si.dwNumberOfProcessors * 2)) return false;
-	if (!m_pFieldAcceptor->Start()) return false;
 
 	printf("server start...\n");
 	return true;

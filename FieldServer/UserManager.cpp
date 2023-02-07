@@ -19,7 +19,7 @@ void CUserManager::Add(CUser* _pUser)
 
 void CUserManager::Del()
 {
-	EnterCriticalSection(&m_cs_user);
+	/*EnterCriticalSection(&m_cs_user);
 	std::list<CUser*>::iterator iter = m_userList.begin();
 	std::list<CUser*>::iterator iterEnd = m_userList.end();
 	CUser* pUser;
@@ -33,7 +33,7 @@ void CUserManager::Del()
 		}
 		else iter++;
 	}
-	LeaveCriticalSection(&m_cs_user);
+	LeaveCriticalSection(&m_cs_user);*/
 }
 
 void CUserManager::OnPacket() // 이전 구조가 더 좋다
@@ -63,4 +63,22 @@ void CUserManager::OnPacket() // 이전 구조가 더 좋다
 int CUserManager::GetUserCount()
 {
 	return m_userList.size();
+}
+
+void CUserManager::SendAll(char* _buffer, int _size)
+{
+	EnterCriticalSection(&m_cs_user);
+	std::list<CUser*>::iterator iter = m_userList.begin();
+	std::list<CUser*>::iterator iterEnd = m_userList.end();
+
+	if (iter == iterEnd) return;
+
+	CUser* pUser;
+
+	for (; iter != iterEnd; iter++) // 지우고 나면 다음 값을 확인할 수 없다
+	{
+		pUser = *iter;
+		pUser->Send(_buffer, _size);
+	}
+	LeaveCriticalSection(&m_cs_user);
 }

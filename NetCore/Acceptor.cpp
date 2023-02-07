@@ -7,7 +7,6 @@ CAcceptor::CAcceptor()
 
 CAcceptor::CAcceptor(SOCKET _socket) : m_socket(_socket)
 {
-
 }
 
 CAcceptor::~CAcceptor()

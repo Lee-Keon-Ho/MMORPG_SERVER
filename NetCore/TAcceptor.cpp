@@ -14,7 +14,7 @@ CTAcceptor::~CTAcceptor()
 
 bool CTAcceptor::Start()
 {
-	if (!m_listener.Start()) return false; // 나중에 수정
+	if (!m_listener.Start()) return false;
 	if (!CThread::Start()) return false;
 	return true;
 }

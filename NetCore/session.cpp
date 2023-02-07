@@ -2,7 +2,7 @@
 #include "IOCP.h"
 #include <stdio.h>
 
-#define BUFFER_MAX 100
+#define BUFFER_MAX 1000
 
 CSession::CSession()
 {
