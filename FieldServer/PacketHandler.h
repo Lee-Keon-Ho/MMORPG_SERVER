@@ -26,4 +26,5 @@ public:
 	void test(CUser* _user, char* _buffer);
 	void InField(CUser* _user, char* _buffer);
 	void MoveUser(CUser* _user, char* _buffer);
+	void NowPosition(CUser* _user, char* _buffer);
 };

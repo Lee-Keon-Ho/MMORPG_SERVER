@@ -86,15 +86,7 @@ void CPacketHandler::InField(CUser* _user, char* _buffer)
 
 void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 {
-	POSITION startPosition;
 	POSITION endPosition;
-
-	startPosition.x = *(float*)_buffer;
-	_buffer += sizeof(float);
-	startPosition.y = *(float*)_buffer;
-	_buffer += sizeof(float);
-	startPosition.z = *(float*)_buffer;
-	_buffer += sizeof(float);
 
 	endPosition.x = *(float*)_buffer;
 	_buffer += sizeof(float);
@@ -102,8 +94,6 @@ void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 	_buffer += sizeof(float);
 	endPosition.z = *(float*)_buffer;
 	_buffer += sizeof(float);
-
-	_user->SetPosition(startPosition);
 
 	std::list<CUser*> userList_t = CUserManager::GetInstance()->GetUserList();
 
@@ -115,13 +105,52 @@ void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 	char sendBuffer[100];
 	char* tempBuffer = sendBuffer;
 
-	*(USHORT*)tempBuffer = 4 + 24;
+	*(USHORT*)tempBuffer = 4 + 12;
 	tempBuffer += 2;
 	*(USHORT*)tempBuffer = 2;
 	tempBuffer += 2;
-	*(POSITION*)tempBuffer = startPosition;
-	tempBuffer += sizeof(POSITION);
 	*(POSITION*)tempBuffer = endPosition;
+	tempBuffer += sizeof(POSITION);
+
+	if (iter == iterEnd) return;
+
+	for (; iter != iterEnd; iter++)
+	{
+		pUser = *iter;
+
+		if (pUser->GetSocket() != _user->GetSocket())
+		{
+			pUser->Send(sendBuffer, tempBuffer - sendBuffer);
+		}
+	}
+}
+
+void CPacketHandler::NowPosition(CUser* _user, char* _buffer)
+{
+	POSITION position;
+
+	position.x = *(float*)_buffer;
+	_buffer += sizeof(float);
+	position.y = *(float*)_buffer;
+	_buffer += sizeof(float);
+	position.z = *(float*)_buffer;
+	_buffer += sizeof(float);
+
+	std::list<CUser*> userList_t = CUserManager::GetInstance()->GetUserList();
+
+	std::list<CUser*>::iterator iter = userList_t.begin();
+	std::list<CUser*>::iterator iterEnd = userList_t.end();
+
+	CUser* pUser;
+
+	char sendBuffer[100];
+	char* tempBuffer = sendBuffer;
+
+	*(USHORT*)tempBuffer = 4 + 12;
+	tempBuffer += 2;
+	*(USHORT*)tempBuffer = 3;
+	tempBuffer += 2;
+	*(POSITION*)tempBuffer = position;
 	tempBuffer += sizeof(POSITION);
 
 	if (iter == iterEnd) return;
