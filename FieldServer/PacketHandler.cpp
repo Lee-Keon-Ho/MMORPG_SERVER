@@ -32,6 +32,8 @@ int CPacketHandler::Handle(CUser* _user) // buffer
 	case 2:
 		MoveUser(_user, readBuffer);
 		break;
+	case 3:
+		NowPosition(_user, readBuffer);
 	default:
 		break;
 	}
@@ -88,6 +90,8 @@ void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 {
 	POSITION endPosition;
 
+	DWORD time = *(DWORD*)_buffer;
+	_buffer += sizeof(DWORD);
 	endPosition.x = *(float*)_buffer;
 	_buffer += sizeof(float);
 	endPosition.y = *(float*)_buffer;
@@ -105,10 +109,12 @@ void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 	char sendBuffer[100];
 	char* tempBuffer = sendBuffer;
 
-	*(USHORT*)tempBuffer = 4 + 12;
+	*(USHORT*)tempBuffer = 4 + 4 + 12;
 	tempBuffer += 2;
 	*(USHORT*)tempBuffer = 2;
 	tempBuffer += 2;
+	*(DWORD*)tempBuffer = time;
+	tempBuffer += sizeof(DWORD);
 	*(POSITION*)tempBuffer = endPosition;
 	tempBuffer += sizeof(POSITION);
 
@@ -129,6 +135,8 @@ void CPacketHandler::NowPosition(CUser* _user, char* _buffer)
 {
 	POSITION position;
 
+	DWORD time = *(DWORD*)_buffer;
+	_buffer += sizeof(DWORD);
 	position.x = *(float*)_buffer;
 	_buffer += sizeof(float);
 	position.y = *(float*)_buffer;
@@ -146,10 +154,12 @@ void CPacketHandler::NowPosition(CUser* _user, char* _buffer)
 	char sendBuffer[100];
 	char* tempBuffer = sendBuffer;
 
-	*(USHORT*)tempBuffer = 4 + 12;
+	*(USHORT*)tempBuffer = 4 + 4+ 12;
 	tempBuffer += 2;
 	*(USHORT*)tempBuffer = 3;
 	tempBuffer += 2;
+	*(DWORD*)tempBuffer = time;
+	tempBuffer += 4;
 	*(POSITION*)tempBuffer = position;
 	tempBuffer += sizeof(POSITION);
 
