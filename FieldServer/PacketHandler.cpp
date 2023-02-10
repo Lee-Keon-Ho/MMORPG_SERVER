@@ -89,9 +89,16 @@ void CPacketHandler::InField(CUser* _user, char* _buffer)
 void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 {
 	POSITION endPosition;
-
+	POSITION startPosition;
 	DWORD time = *(DWORD*)_buffer;
 	_buffer += sizeof(DWORD);
+
+	startPosition.x = *(float*)_buffer;
+	_buffer += sizeof(float);
+	startPosition.y = *(float*)_buffer;
+	_buffer += sizeof(float);
+	startPosition.z = *(float*)_buffer;
+	_buffer += sizeof(float);
 	endPosition.x = *(float*)_buffer;
 	_buffer += sizeof(float);
 	endPosition.y = *(float*)_buffer;
@@ -109,12 +116,14 @@ void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 	char sendBuffer[100];
 	char* tempBuffer = sendBuffer;
 
-	*(USHORT*)tempBuffer = 4 + 4 + 12;
+	*(USHORT*)tempBuffer = 4 + 4 + 12 + 12;
 	tempBuffer += 2;
 	*(USHORT*)tempBuffer = 2;
 	tempBuffer += 2;
 	*(DWORD*)tempBuffer = time;
 	tempBuffer += sizeof(DWORD);
+	*(POSITION*)tempBuffer = startPosition;
+	tempBuffer += sizeof(POSITION);
 	*(POSITION*)tempBuffer = endPosition;
 	tempBuffer += sizeof(POSITION);
 
