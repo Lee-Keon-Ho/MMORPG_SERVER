@@ -24,7 +24,10 @@ public:
 	int Handle(CUser* _user);
 
 	void test(CUser* _user, char* _buffer);
+	void LogIn(CUser* _user, char* _buffer);
 	void InField(CUser* _user, char* _buffer);
+	void NewUser(CUser* _user);
 	void MoveUser(CUser* _user, char* _buffer);
 	void NowPosition(CUser* _user, char* _buffer);
+	void MoveUser2(CUser* _user, char* _buffer);
 };

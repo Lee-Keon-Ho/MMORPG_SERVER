@@ -29,8 +29,8 @@ bool CFieldApp::Initialize()
 
 bool CFieldApp::CreateInstance()
 {
-	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("112.184.241.36", 30002);
-	//if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("183.108.148.83", 30002);
+	//if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("112.184.241.36", 30002);
+	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("183.108.148.83", 30002);
 	if (!m_pFieldAcceptor) return false;
 	if (m_pThreadManager == nullptr) m_pThreadManager = new CThreadManager();
 	if (!m_pThreadManager) return false;
@@ -53,7 +53,7 @@ void CFieldApp::RunLoop()
 {
 	while (true)
 	{
-		//CUserManager::GetInstance()->OnPacket();
+		//CUserManager::GetI0nstance()->OnPacket();
 		//CUserManager::GetInstance()->Del();
 		Sleep(1);
 	}
