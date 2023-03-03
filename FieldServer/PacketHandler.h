@@ -30,4 +30,5 @@ public:
 	void MoveUser(CUser* _user, char* _buffer);
 	void NowPosition(CUser* _user, char* _buffer);
 	void MoveUser2(CUser* _user, char* _buffer);
+	void Arrive(CUser* _user, char* _buffer);
 };
