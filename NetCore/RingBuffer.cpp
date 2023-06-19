@@ -4,6 +4,7 @@
 CRingBuffer::CRingBuffer(int _bufferSize) : m_size(_bufferSize), m_remainDataSize(0)
 {
 	m_buffer = new char[m_size];
+	m_tempBuffer = new char[m_size];
 	memset(m_buffer, 0, sizeof(char) * m_size);
 
 	m_pRead = m_buffer;
@@ -86,10 +87,9 @@ char* CRingBuffer::GetPacketBuffer()
 
 	if (readSize > read_EndBuf)
 	{
-		char tempBuffer[1000];
-		memcpy(tempBuffer, readBuffer, read_EndBuf);
-		memcpy(tempBuffer + read_EndBuf, m_buffer, readSize - read_EndBuf);
-		readBuffer = tempBuffer;
+		memcpy(m_tempBuffer, readBuffer, read_EndBuf);
+		memcpy(m_tempBuffer + read_EndBuf, m_buffer, readSize - read_EndBuf);
+		readBuffer = m_tempBuffer;
 	}
 
 	if (readSize == 0) return nullptr;

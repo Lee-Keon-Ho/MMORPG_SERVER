@@ -36,9 +36,6 @@
     <ClInclude Include="Thread.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Acceptor.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="TAcceptor.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
@@ -63,9 +60,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Thread.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Acceptor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TAcceptor.cpp">

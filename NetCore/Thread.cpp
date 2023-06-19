@@ -2,6 +2,8 @@
 #include <Windows.h>
 #include <process.h>
 #include <stdio.h>
+#include <iostream>
+#include <exception>
 
 CThread::CThread()
 {
@@ -19,6 +21,7 @@ bool CThread::Start()
 		printf("Thread Error\n");
 		return false;
 	}
+	
 	return true;
 }
 

@@ -1,51 +1,75 @@
 #include "PacketHandler.h"
+#include "PacketStruct.h"
 #include "UserManager.h"
+#include "Map.h"
+#include "PacketType.h"
+#include <algorithm>
+#include <iostream>
 
 CPacketHandler::CPacketHandler()
 {
-	
+	srand(time(NULL));
+	m_lpfp = new tFunc[11];
+
+	m_lpfp[0] = &CPacketHandler::Latency;
+	m_lpfp[1] = &CPacketHandler::LogIn;
+	m_lpfp[2] = &CPacketHandler::InField;
+	m_lpfp[3] = &CPacketHandler::Dummy;
+	m_lpfp[4] = &CPacketHandler::NowPosition;
+	m_lpfp[5] = &CPacketHandler::MoveUser2;
+	m_lpfp[6] = &CPacketHandler::Arrive;
+	m_lpfp[7] = &CPacketHandler::LogOut;
+	//m_lpfp[8] = &CPacketHandler::MoveSector;
 }
 
 CPacketHandler::~CPacketHandler()
 {
 }
 
-int CPacketHandler::Handle(CUser* _user) // buffer
+int CPacketHandler::Handle(CUser* _user, char* _buffer)
 {
-	char* readBuffer = _user->GetPacketBuffer(); // 밖에서 차단이 더 좋을거 같다
+	u_short size = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
+	u_short type = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
 
-	if (readBuffer == nullptr) return 0;
-
-	USHORT size = *(USHORT*)readBuffer;
-	readBuffer += sizeof(USHORT);
-	USHORT type = *(USHORT*)readBuffer;
-	readBuffer += sizeof(USHORT);
+	if (size <= 0) return 0;
 
 	switch (type)
 	{
 	case 0:
-		test(_user, readBuffer);
+		Latency(_user, _buffer);
 		break;
-	case 1:
-		LogIn(_user, readBuffer);
+	case CS_PT_LOGIN:
+		LogIn(_user, _buffer);
 		break;
-	case 2:
-		InField(_user, readBuffer);
+	case CS_PT_INFIELD:
+		InField(_user, _buffer);
 		break;
-	case 3:
-		MoveUser(_user, readBuffer);
-	case 4:
-		NowPosition(_user, readBuffer);
+	case CS_PT_DUMMY:
+		Dummy(_user, _buffer);
 		break;
-	case 5:
-		MoveUser2(_user, readBuffer);
+	case CS_PT_NOWPOSITION:
+		NowPosition(_user, _buffer);
 		break;
-	case 6:
-		Arrive(_user, readBuffer);
+	case CS_PT_MOVEUSER:
+		MoveUser2(_user, _buffer);
+		break;
+	case CS_PT_ARRIVE:
+		Arrive(_user, _buffer);
+		break;
+	case CS_PT_LOGOUT:
+		LogOut(_user, _buffer);
+		break;
+	case CS_PT_MOVESECTOR:
+		break;
+	case 9:
+		GetUserCount(_user);
 		break;
 	default:
 		break;
 	}
+	//(this->*m_lpfp[type])(_user, _buffer);
 	/*
 	* m_lpfp = test;
 		함수포인터 구현
@@ -56,268 +80,126 @@ int CPacketHandler::Handle(CUser* _user) // buffer
 	return size;
 }
 
-void CPacketHandler::LogIn(CUser* _user, char* _buffer)
+void CPacketHandler::Latency(CUser* _user, char* _buffer)
 {
-	int UserCount = CUserManager::GetInstance()->GetUserCount();
-	_user->SetNumber(UserCount);
+	PACKET_LATENCY packet(sizeof(PACKET_LATENCY), 0, *(float*)_buffer);
 
-	char sendBuffer[100];
-	char* tempBuffer = sendBuffer;
-
-	*(USHORT*)tempBuffer = 6;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = 1;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = UserCount;
-	tempBuffer += 2;
-
-	_user->Send(sendBuffer, tempBuffer - sendBuffer);
+	_user->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_LATENCY));
 }
 
-void CPacketHandler::test(CUser* _user, char* _buffer)
+void CPacketHandler::LogIn(CUser* _user, char* _buffer)
 {
-	DWORD time = *(DWORD*)_buffer;
-
-	char sendBuffer[100];
-	char* tempBuffer = sendBuffer;
-
-	*(USHORT*)tempBuffer = 4 + 4 + 2;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = 0;
-	tempBuffer += 2;
-	*(DWORD*)tempBuffer = time;
-	tempBuffer += 4;
-	*(USHORT*)tempBuffer = CUserManager::GetInstance()->GetUserCount();
-	tempBuffer += 2;
-
-	_user->Send(sendBuffer, tempBuffer - sendBuffer);
+	CUserManager* userManager = CUserManager::GetInstance();
+	userManager->Add(_user);
+	_user->SetNumber(userManager->AddUserNumber());
+	_user->LogIn();
 }
 
 void CPacketHandler::InField(CUser* _user, char* _buffer)
 {
-	POSITION position;
+	CUserManager* userManager = CUserManager::GetInstance();
 
-	position.x = *(float*)_buffer;
-	_buffer += sizeof(float);
-	position.x = *(float*)_buffer;
-	_buffer += sizeof(float);
-	position.x = *(float*)_buffer;
-	_buffer += sizeof(float);
+	VECTOR3 position = *(VECTOR3*)_buffer;
+	_buffer += sizeof(VECTOR3);
 
-	_user->SetPosition(position);
-	_user->SetEndPosition(position);
+	_user->SetUser(position);
+	_user->Infield();
 
-	char sendBuffer[500];
-	char* tempBuffer = sendBuffer;
-	int userCount = CUserManager::GetInstance()->GetUserCount();
-	*(USHORT*)tempBuffer = 6 + ( 32 * (userCount - 1));
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = 2;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = userCount;
-	tempBuffer += 2;
-
-	std::list<CUser*> userList_t = CUserManager::GetInstance()->GetUserList();
-
-	std::list<CUser*>::iterator iter = userList_t.begin();
-	std::list<CUser*>::iterator iterEnd = userList_t.end();
-
-	if (iter == iterEnd) return;
-
-	CUser* pUser;
-
-	for (; iter != iterEnd; iter++)
-	{
-		pUser = *iter;
-
-		if (pUser->GetNumber() != _user->GetNumber())
-		{
-			*(USHORT*)tempBuffer = pUser->GetNumber();
-			tempBuffer += 2;
-			*(USHORT*)tempBuffer = pUser->GetState();
-			tempBuffer += 2;
-			*(float*)tempBuffer = pUser->GetRotationY();
-			tempBuffer += sizeof(float);
-			memcpy(tempBuffer, pUser->GetPosition(), sizeof(POSITION));
-			tempBuffer += sizeof(POSITION);
-			memcpy(tempBuffer, pUser->GetEndPosition(), sizeof(POSITION));
-			tempBuffer += sizeof(POSITION);
-		}
-	}
-
-	_user->Send(sendBuffer, tempBuffer - sendBuffer);
-
-	if(userCount != 1) NewUser(_user);
+	if(userManager->GetUserCount() != 1) NewUser(_user);
 }
 
 void CPacketHandler::NewUser(CUser* _user)
 {
-	char sendBuffer[100];
-	char* tempBuffer = sendBuffer;
-
-	*(USHORT*)tempBuffer = 6;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = 4;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = _user->GetNumber();
-	tempBuffer += 2;
-
-	std::list<CUser*> userList_t = CUserManager::GetInstance()->GetUserList();
-
-	std::list<CUser*>::iterator iter = userList_t.begin();
-	std::list<CUser*>::iterator iterEnd = userList_t.end();
-
-	if (iter == iterEnd) return;
-
-	CUser* pUser;
-
-	for (; iter != iterEnd; iter++)
-	{
-		pUser = *iter;
-
-		if (pUser->GetNumber() != _user->GetNumber())
-		{
-			pUser->Send(sendBuffer, tempBuffer - sendBuffer);
-		}
-	}
+	_user->NewUser();
 }
 
-void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
+void CPacketHandler::Dummy(CUser* _user, char* _buffer)
 {
-	POSITION endPosition;
-	POSITION startPosition;
+	/*CMap* pMap = CMap::GetInstance();
 
-	startPosition.x = *(float*)_buffer;
-	_buffer += sizeof(float);
-	startPosition.y = *(float*)_buffer;
-	_buffer += sizeof(float);
-	startPosition.z = *(float*)_buffer;
-	_buffer += sizeof(float);
-	endPosition.x = *(float*)_buffer;
-	_buffer += sizeof(float);
-	endPosition.y = *(float*)_buffer;
-	_buffer += sizeof(float);
-	endPosition.z = *(float*)_buffer;
-	_buffer += sizeof(float);
+	VECTOR3 position;
+	int num = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
+	int state = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
+	position = *(VECTOR3*)_buffer;
+	_buffer += sizeof(VECTOR3);
 
-	_user->SetPosition(startPosition);
-	_user->SetEndPosition(endPosition);
+	_user->SetUser(position, position, state);
+	_user->SetNowSector(position);
 
-	std::list<CUser*> userList_t = CUserManager::GetInstance()->GetUserList();
-
-	std::list<CUser*>::iterator iter = userList_t.begin();
-	std::list<CUser*>::iterator iterEnd = userList_t.end();
-
-	CUser* pUser;
-
-	char sendBuffer[100];
-	char* tempBuffer = sendBuffer;
-
-	*(USHORT*)tempBuffer = 6 + 12 + 12;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = 3;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = _user->GetNumber();
-	tempBuffer += 2;
-	*(POSITION*)tempBuffer = startPosition;
-	tempBuffer += sizeof(POSITION);
-	*(POSITION*)tempBuffer = endPosition;
-	tempBuffer += sizeof(POSITION);
-
-	if (iter == iterEnd) return;
-
-	for (; iter != iterEnd; iter++)
-	{
-		pUser = *iter;
-
-		if (pUser->GetSocket() != _user->GetSocket())
-		{
-			pUser->Send(sendBuffer, tempBuffer - sendBuffer);
-		}
-	}
+	pMap->CheckSectorUpdates(_user);*/
 }
 
 void CPacketHandler::NowPosition(CUser* _user, char* _buffer)
 {
-	POSITION position;
-	int num = *(USHORT*)_buffer;
-	_buffer += 2;
-	/*int state = *(USHORT*)_buffer;
-	_buffer += 2;*/
+	int num = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
+	/*int state = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);*/
 
-	position.x = *(float*)_buffer;
-	_buffer += sizeof(float);
-	position.y = *(float*)_buffer;
-	_buffer += sizeof(float);
-	position.z = *(float*)_buffer;
-	_buffer += sizeof(float);
+	VECTOR3 position = *(VECTOR3*)_buffer;
 
 	_user->SetPosition(position);
-	//_user->SetState(state);
+	_user->SetNowSector(position);
+
+	CMap::GetInstance()->CheckSectorUpdates(_user);
+
+	_user->NowPosition();
 }
 
 void CPacketHandler::MoveUser2(CUser* _user, char* _buffer)
 {
-	int number = *(USHORT*)_buffer;
-	_buffer += 2;
-
-	char sendBuffer[200];
-	char* tempBuffer = sendBuffer;
-
-	*(USHORT*)tempBuffer = 6 + sizeof(POSITION) + sizeof(POSITION);
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = 5;
-	tempBuffer += 2;
-	*(USHORT*)tempBuffer = number;
-	tempBuffer += 2;
-
-	_user->SetState(1);
-
-	memcpy(tempBuffer, _buffer, sizeof(POSITION));
-	_user->SetPosition((*(POSITION*)_buffer));
-	_buffer += sizeof(POSITION);
-	tempBuffer += sizeof(POSITION);
+	int number = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
+	int state = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
+	VECTOR3 current = *(VECTOR3*)_buffer;
+	_buffer += sizeof(VECTOR3);
+	VECTOR3 end = *(VECTOR3*)_buffer;
+	_buffer += sizeof(VECTOR3);
 	
-	memcpy(tempBuffer, _buffer, sizeof(POSITION));
-	_user->SetEndPosition((*(POSITION*)_buffer));
-	_buffer += sizeof(POSITION);
-	tempBuffer += sizeof(POSITION);
-
-	std::list<CUser*> userList_t = CUserManager::GetInstance()->GetUserList();
-
-	std::list<CUser*>::iterator iter = userList_t.begin();
-	std::list<CUser*>::iterator iterEnd = userList_t.end();
-
-	if (iter == iterEnd) return;
-
-	CUser* pUser;
-
-	for (; iter != iterEnd; iter++)
-	{
-		pUser = *iter;
-
-		if (pUser->GetSocket() != _user->GetSocket())
-		{
-			pUser->Send(sendBuffer, tempBuffer - sendBuffer);
-		}
-	}
+	_user->SetUser(current, end, state);
+	_user->MoveUser();
 }
 
-void CPacketHandler::Arrive(CUser* _user, char* _buffer)
+void CPacketHandler::Arrive(CUser* _user, char* _buffer) // stop
 {
-	POSITION position;
-	int num = *(USHORT*)_buffer;
-	_buffer += 2;
+	VECTOR3 position;
+	int num = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
+	int state = *(u_short*)_buffer;
+	_buffer += sizeof(u_short);
 	float y = *(float*)_buffer;
 	_buffer += sizeof(float);
-	position.x = *(float*)_buffer;
-	_buffer += sizeof(float);
-	position.y = *(float*)_buffer;
-	_buffer += sizeof(float);
-	position.z = *(float*)_buffer;
-	_buffer += sizeof(float);
+	position = *(VECTOR3*)_buffer;
+	_buffer += sizeof(VECTOR3);
 
-	_user->SetRotationY(y);
-	_user->SetPosition(position);
-	_user->SetEndPosition(position);
+	_user->SetUser(position, position, y, state);
+	_user->SetNowSector(position);
+
+	CMap::GetInstance()->CheckSectorUpdates(_user);
+
+	_user->Arrive();
+}
+
+void CPacketHandler::LogOut(CUser* _user, char* _buffer)
+{
+	CUserManager* pUserManager = CUserManager::GetInstance();
+
+	PACKET_LOGOUT packet;
+
+	packet.size = sizeof(PACKET_LOGOUT);
+	packet.type = CS_PT_LOGOUT;
+	packet.number = _user->GetNumber();
+
+	pUserManager->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_LOGOUT));
+
+	pUserManager->Del(_user);
+	CMap::GetInstance()->Del(_user, _user->GetNowSector());
+}
+
+void CPacketHandler::GetUserCount(CUser* _user)
+{
+	CUserManager::GetInstance()->SendUserCount(*_user);
 }

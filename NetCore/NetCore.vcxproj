@@ -143,7 +143,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Acceptor.h" />
     <ClInclude Include="TAcceptor.h" />
     <ClInclude Include="Thread.h" />
     <ClInclude Include="IOCP.h" />
@@ -154,7 +153,6 @@
     <ClInclude Include="workerThread.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Acceptor.cpp" />
     <ClCompile Include="TAcceptor.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="IOCP.cpp" />

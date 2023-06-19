@@ -1,6 +1,6 @@
 #include "UserManager.h"
 
-CUserManager::CUserManager()
+CUserManager::CUserManager() : m_userNumber(0), currentSectorcount(0)
 {
 	InitializeCriticalSection(&m_cs_user);
 }
@@ -17,9 +17,9 @@ void CUserManager::Add(CUser* _pUser)
 	LeaveCriticalSection(&m_cs_user);
 }
 
-void CUserManager::Del()
+void CUserManager::Del(CUser* _pUser)
 {
-	/*EnterCriticalSection(&m_cs_user);
+	EnterCriticalSection(&m_cs_user);
 	std::list<CUser*>::iterator iter = m_userList.begin();
 	std::list<CUser*>::iterator iterEnd = m_userList.end();
 	CUser* pUser;
@@ -27,37 +27,19 @@ void CUserManager::Del()
 	{
 		pUser = *iter;
 		
-		if (pUser->GetLogOut())
+		if (pUser->GetSocket() == _pUser->GetSocket())
 		{
 			iter = m_userList.erase(iter);
 		}
 		else iter++;
 	}
-	LeaveCriticalSection(&m_cs_user);*/
+	LeaveCriticalSection(&m_cs_user);
 }
 
-void CUserManager::OnPacket() // 이전 구조가 더 좋다
+int CUserManager::AddUserNumber()
 {
-	//EnterCriticalSection(&m_cs_user);
-	std::list<CUser*>::iterator iter = m_userList.begin();
-	std::list<CUser*>::iterator iterEnd = m_userList.end();
-
-	if (iter == iterEnd) return;
-
-	CUser* pUser = nullptr;
-
-	pUser = *iter;
-	pUser->PacketHandle(); // 누적으로 처리할 경우 다른 이름의 함수가 필요하다
-
-	//for (; iter != iterEnd; iter++) // 지우고 나면 다음 값을 확인할 수 없다
-	//{
-	//	pUser = *iter;
-	//	while (true) // 구조를 조금 더 생각해 보자, Packet이 있는지 확인하는 법 생각해보자
-	//	{
-	//		if (pUser->PacketHandle() <= 0) break; //HandlePacket
-	//	}
-	//}
-	//LeaveCriticalSection(&m_cs_user);
+	m_userNumber++;
+	return m_userNumber;
 }
 
 int CUserManager::GetUserCount()
@@ -68,17 +50,69 @@ int CUserManager::GetUserCount()
 void CUserManager::SendAll(char* _buffer, int _size)
 {
 	EnterCriticalSection(&m_cs_user);
-	std::list<CUser*>::iterator iter = m_userList.begin();
-	std::list<CUser*>::iterator iterEnd = m_userList.end();
+	std::list<CUser*> userList = m_userList;
+	LeaveCriticalSection(&m_cs_user);
 
-	if (iter == iterEnd) return;
+	std::list<CUser*>::iterator iter = userList.begin();
+	std::list<CUser*>::iterator iterEnd = userList.end();
+
+	if (iter == iterEnd)
+	{
+		return;
+	}
 
 	CUser* pUser;
 
-	for (; iter != iterEnd; iter++) // 지우고 나면 다음 값을 확인할 수 없다
+	for (; iter != iterEnd; iter++)
 	{
 		pUser = *iter;
 		pUser->Send(_buffer, _size);
+		break;
 	}
+}
+
+void CUserManager::SendAll(char* _buffer, int _size, SOCKET _socket)
+{
+	EnterCriticalSection(&m_cs_user);
+	std::list<CUser*> userList = m_userList;
 	LeaveCriticalSection(&m_cs_user);
+
+	std::list<CUser*>::iterator iter = userList.begin();
+	std::list<CUser*>::iterator iterEnd = userList.end();
+
+	if (iter == iterEnd)
+	{
+		return;
+	}
+
+	CUser* pUser;
+
+	for (; iter != iterEnd; iter++)
+	{
+		pUser = *iter;
+		if (pUser->GetSocket() != _socket)
+		{
+			pUser->Send(_buffer, _size);
+		}
+	}
+}
+
+void CUserManager::SendUserCount(CUser& _user)
+{
+	char sendBuffer[100];
+	char* tempBuffer;
+
+	tempBuffer = sendBuffer;
+
+	*(u_short*)tempBuffer = 8;
+	tempBuffer += sizeof(u_short);
+	*(u_short*)tempBuffer = 12;
+	tempBuffer += sizeof(u_short);
+	*(u_short*)tempBuffer = GetUserCount();
+	tempBuffer += sizeof(u_short);
+	currentSectorcount = _user.GetUserCountInSector();
+	*(u_short*)tempBuffer = currentSectorcount;
+	tempBuffer += sizeof(u_short);
+
+	_user.Send(sendBuffer, tempBuffer - sendBuffer);
 }

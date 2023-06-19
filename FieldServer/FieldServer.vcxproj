@@ -92,6 +92,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -120,6 +121,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,6 +142,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="AStar.cpp" />
+    <ClCompile Include="Map.cpp" />
+    <ClCompile Include="MapGrid.cpp" />
+    <ClCompile Include="Monster.cpp" />
+    <ClCompile Include="MonsterManager.cpp" />
+    <ClCompile Include="Navigation.cpp" />
+    <ClCompile Include="Node.cpp" />
+    <ClCompile Include="PriorityQueue.cpp" />
+    <ClCompile Include="QuadTree.cpp" />
+    <ClCompile Include="Sector.cpp" />
     <ClCompile Include="User.cpp" />
     <ClCompile Include="FieldApp.cpp" />
     <ClCompile Include="FieldAcceptor.cpp" />
@@ -149,6 +161,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="AStar.h" />
+    <ClInclude Include="Navigation.h" />
+    <ClInclude Include="Map.h" />
+    <ClInclude Include="MapGrid.h" />
+    <ClInclude Include="Monster.h" />
+    <ClInclude Include="MonsterManager.h" />
+    <ClInclude Include="Node.h" />
+    <ClInclude Include="PacketStruct.h" />
+    <ClInclude Include="PacketType.h" />
+    <ClInclude Include="PriorityQueue.h" />
+    <ClInclude Include="QuadTree.h" />
+    <ClInclude Include="Sector.h" />
+    <ClInclude Include="sectorStruct.h" />
     <ClInclude Include="User.h" />
     <ClInclude Include="FieldApp.h" />
     <ClInclude Include="FieldAcceptor.h" />

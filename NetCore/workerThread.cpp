@@ -3,6 +3,8 @@
 #include "IOCP.h"
 #include <process.h>
 #include <stdio.h>
+#include <iostream>
+#include <exception>
 CWorkerThread::CWorkerThread()
 {
 }
@@ -27,7 +29,6 @@ unsigned int _stdcall CWorkerThread::WorkerThreadFunc(void* _pArgs)
 	CWorkerThread* thread = (CWorkerThread*)_pArgs;
 
 	thread->RunLoop();
-
 	return 0;
 }
 
@@ -38,25 +39,31 @@ void CWorkerThread::RunLoop()
 	overlapped_ex* overlapped;
 	int bin;
 
-	while (1)
+	while (true)
 	{
-		if (!GetQueuedCompletionStatus(hIOCP, &bytesTrans, (PULONG_PTR)&bin, (LPOVERLAPPED*)&overlapped, INFINITE))
+		try
 		{
-			// 실패를 했으면 io작업중 하나가 실패한 것이니 그것을 확인해야 한다
-			// 확인을 했으면 그것에 맞는 처리를 해줘야한다.
+			if (!GetQueuedCompletionStatus(hIOCP, &bytesTrans, (PULONG_PTR)&bin, (LPOVERLAPPED*)&overlapped, INFINITE))
+			{
+				// 실패를 했으면 io작업중 하나가 실패한 것이니 그것을 확인해야 한다
+				// 확인을 했으면 그것에 맞는 처리를 해줘야한다.
+				printf("Error : %d\n", GetLastError()); // 끊긴거를 100% 알수 없다
 
-			printf("%d\n", GetLastError()); // 끊긴거를 100% 알수 없다
-			
-			continue;
-		}
+				continue;
+			}
 
-		if (bytesTrans <= 0)
-		{
-			delete overlapped->session;
+			if (bytesTrans <= 0)
+			{
+				delete overlapped->session;
+			}
+			else
+			{
+				overlapped->session->OnRecv(bytesTrans);
+			}
 		}
-		else
+		catch (std::exception& e)
 		{
-			overlapped->session->RecvHandle(bytesTrans);
+			std::cout << e.what() << std::endl;
 		}
 	}
 }

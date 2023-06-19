@@ -2,7 +2,9 @@
 #include "../NetCore/IOCP.h"
 #include "../NetCore/workerThread.h"
 #include "UserManager.h"
+#include "MonsterManager.h"
 #include "User.h"
+#include "Map.h"
 #include <stdio.h>
 
 #pragma comment (lib, "./../x64/Debug/NetCore.lib")
@@ -29,8 +31,11 @@ bool CFieldApp::Initialize()
 
 bool CFieldApp::CreateInstance()
 {
+	if (CMap::GetInstance());
+	CUserManager::GetInstance();
+	CMonsterManager::GetInstance();
 	//if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("112.184.241.36", 30002);
-	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("220.70.186.44", 30002);
+	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("183.108.148.83", 30002);
 	if (!m_pFieldAcceptor) return false;
 	if (m_pThreadManager == nullptr) m_pThreadManager = new CThreadManager();
 	if (!m_pThreadManager) return false;
@@ -45,6 +50,8 @@ bool CFieldApp::StartInstance()
 
 	if (!m_pThreadManager->Start(si.dwNumberOfProcessors * 2)) return false;
 
+	//CMonsterManager::GetInstance()->Start(); // 2023-05-31 test
+
 	printf("server start...\n");
 	return true;
 }
@@ -53,8 +60,6 @@ void CFieldApp::RunLoop()
 {
 	while (true)
 	{
-		//CUserManager::GetI0nstance()->OnPacket();
-		//CUserManager::GetInstance()->Del();
 		Sleep(1);
 	}
 }

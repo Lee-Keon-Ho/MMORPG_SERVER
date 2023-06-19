@@ -15,5 +15,5 @@ CFieldAcceptor::~CFieldAcceptor()
 void CFieldAcceptor::Handle(ACCEPT_SOCKET_INFO _socket)
 {
 	CUser* pUser = new CUser(_socket);
-	CUserManager::GetInstance()->Add(pUser);
+	// 나중에 다른 기능을
 }

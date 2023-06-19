@@ -6,6 +6,7 @@ private:
 	int m_size;
 
 	char* m_buffer;
+	char* m_tempBuffer;
 	char* m_pRead;
 	char* m_pWrite;
 	char* m_pBufferEnd;

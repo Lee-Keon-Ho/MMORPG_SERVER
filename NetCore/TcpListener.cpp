@@ -5,7 +5,6 @@
 
 CTcpListener::CTcpListener(PCSTR _ip, u_short _port)
 {
-	// ¿¹¿Ü
 	m_socket = WSASocketW(PF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 
 	m_addr.sin_family = AF_INET;

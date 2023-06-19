@@ -1,6 +1,8 @@
 #include "session.h"
 #include "IOCP.h"
 #include <stdio.h>
+#include <iostream>
+#include <exception>
 
 #define BUFFER_MAX 1000
 
@@ -16,7 +18,6 @@ CSession::CSession(ACCEPT_SOCKET_INFO _socketInfo)
 	m_ringBuffer = new CRingBuffer(BUFFER_MAX);
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
-	memset(&m_socket_info.addr, 0, sizeof(SOCKADDR_IN));
 
 	CIocp::GetInstance()->Associate(m_socket_info.socket);
 
@@ -31,9 +32,22 @@ CSession::~CSession()
 
 bool CSession::Send(char* _buffer, int _size)
 {
-	int sendSize = send(m_socket_info.socket, _buffer, _size, 0);
+	//int sendSize = send(m_socket_info.socket, _buffer, _size, 0); // 블록킹 함수
+	DWORD sendSize = 0;
+	DWORD flags = 0;
+	DWORD err = 0;
+	WSABUF buffer;
+	buffer.len = _size;
+	buffer.buf = _buffer;
 
-	if (sendSize < 0) return false;
+	if (WSASend(m_socket_info.socket, &buffer, 1, &sendSize, 0, NULL, NULL) == SOCKET_ERROR) // 논 블록킹 함수
+	{
+		err = WSAGetLastError();// != WSAEWOULDBLOCK)
+		printf("Error WSASend would block %d \n", err);
+		return false;
+	}
+
+	//if (sendSize < 0) return false;
 
 	return true;
 }
@@ -51,26 +65,28 @@ bool CSession::Recv()
 			printf("Error WSARecv : %d \n", err);
 			return false;
 		}
+		return false;
 	}
 	return true;
 }
 
-void CSession::RecvHandle(DWORD _size)
+void CSession::OnRecv(DWORD _size)
 {
 	m_ringBuffer->Write(_size);
-
-	int size = PacketHandle();
-
-	if (_size > size)
+	PacketHandle();
+	/*try
 	{
-		printf("bytesTrans : %d // recvSize : %d\n", _size, size);
+		
 	}
+	catch (std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+	}*/
 
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
-
+	
 	Recv();
-
 }
 
 SOCKET CSession::GetSocket()
