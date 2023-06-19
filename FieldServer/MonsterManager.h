@@ -1,7 +1,6 @@
 #pragma once
-#include "Monster.h"
 #include "Navigation.h"
-#include <vector>
+#include "Monster.h"
 
 class CMonsterManager
 {

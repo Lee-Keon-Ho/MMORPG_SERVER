@@ -96,14 +96,14 @@ void CPriorityQueue::Pop()
 	}
 }
 
-CNode* CPriorityQueue::Find(CNode _node)
+bool CPriorityQueue::Find(CNode _node)
 {
 	for (CNode node : m_tileList)
 	{
-		if (node.m_x == _node.m_x && node.m_y == _node.m_y) return &node;
+		if (node.m_x == _node.m_x && node.m_y == _node.m_y) return true;
 	}
 
-	return nullptr;
+	return false;
 }
 
 int CPriorityQueue::Size()

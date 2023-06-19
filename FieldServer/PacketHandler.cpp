@@ -165,7 +165,7 @@ void CPacketHandler::MoveUser2(CUser* _user, char* _buffer)
 
 void CPacketHandler::Arrive(CUser* _user, char* _buffer) // stop
 {
-	VECTOR3 position;
+	VECTOR3 position({ 0,0,0 });
 	int num = *(u_short*)_buffer;
 	_buffer += sizeof(u_short);
 	int state = *(u_short*)_buffer;

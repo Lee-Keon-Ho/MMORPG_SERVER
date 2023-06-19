@@ -50,7 +50,7 @@ bool CFieldApp::StartInstance()
 
 	if (!m_pThreadManager->Start(si.dwNumberOfProcessors * 2)) return false;
 
-	//CMonsterManager::GetInstance()->Start(); // 2023-05-31 test
+	CMonsterManager::GetInstance()->Start(); // 2023-05-31 test
 
 	printf("server start...\n");
 	return true;

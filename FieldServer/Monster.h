@@ -1,5 +1,4 @@
 #pragma once
-#include "MapGrid.h"
 #include <stack>
 class CMonster
 {
@@ -11,6 +10,6 @@ public:
 	CMonster();
 	~CMonster();
 
-	void Move(CMapGrid* _pGrid);
+	//void Move(CMapGrid* _pGrid);
 };
 

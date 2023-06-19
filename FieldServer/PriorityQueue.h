@@ -18,6 +18,6 @@ public:
 	void Swap(CNode* _pNodeA, CNode* _pNodeB);
 	CNode Top();
 	void Pop();
-	CNode* Find(CNode _pNode);
+	bool Find(CNode _pNode);
 	int Size();
 };

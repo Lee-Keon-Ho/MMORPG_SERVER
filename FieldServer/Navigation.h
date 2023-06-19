@@ -1,6 +1,6 @@
 #pragma once
-#include "MapGrid.h"
 #include "AStar.h"
+#include "MapGrid.h"
 
 class CNavigation 
 {
@@ -12,5 +12,5 @@ public:
 	CNavigation(const char* _fileName);
 	~CNavigation();
 
-	void FindPath();
+	void FindPath(VECTOR3 _start, VECTOR3 _goal);
 };

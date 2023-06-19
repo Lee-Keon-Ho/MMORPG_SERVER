@@ -179,6 +179,7 @@
     <ClInclude Include="FieldAcceptor.h" />
     <ClInclude Include="PacketHandler.h" />
     <ClInclude Include="UserManager.h" />
+    <ClInclude Include="VECTOR.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

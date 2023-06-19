@@ -4,7 +4,7 @@
 CMonsterManager::CMonsterManager()
 {
 	//m_monsterList.push_back(new CMonster);
-	m_pNavigation = new CNavigation();
+	m_pNavigation = new CNavigation("map.bin");
 }
 
 CMonsterManager::~CMonsterManager()
@@ -14,6 +14,9 @@ CMonsterManager::~CMonsterManager()
 
 void CMonsterManager::Start()
 {
+	VECTOR3 start(1, 0, 1);
+	VECTOR3 goal(28, 0, 1);
+	m_pNavigation->FindPath(start, goal);
 	// 다른 세팅을 더 하고
 	// thread를 사용해서 RunLoop();
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include "../NetCore/session.h"
 #include "PacketStruct.h"
-#include <iostream>
 #include <string>
 
 class CSector;

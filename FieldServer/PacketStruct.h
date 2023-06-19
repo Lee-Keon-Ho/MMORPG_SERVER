@@ -1,15 +1,9 @@
 #pragma once
 #include <WinSock2.h>
 #include <string>
+#include "VECTOR.h"
 
 #pragma pack( push, 1)
-
-struct VECTOR3
-{
-	float x;
-	float y;
-	float z;
-};
 
 struct PACKET
 {

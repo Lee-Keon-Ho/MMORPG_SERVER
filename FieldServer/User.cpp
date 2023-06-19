@@ -7,11 +7,11 @@
 
 #define NAME_MAX 9
 
-CUser::CUser()
+CUser::CUser() : m_position({ 0,0,0 }), m_endPosition({ 0,0,0 })
 {
 }
 
-CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : CSession(_socketInfo)
+CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : CSession(_socketInfo), m_position({ 0,0,0 }), m_endPosition({ 0,0,0 })
 {
 	m_name = new char[NAME_MAX];
 	memset(m_name, 0, NAME_MAX);
