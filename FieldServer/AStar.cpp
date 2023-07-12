@@ -19,7 +19,7 @@ CAStar::~CAStar()
 	if (m_pOpenList != nullptr) { delete m_pOpenList; m_pOpenList = nullptr; }
 }
 
-void CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
+std::vector<VECTOR3> CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 {
 	CNode startNode(static_cast<unsigned int>(_start.x), static_cast<unsigned int>(_start.z));
 	CNode goalNode(static_cast<unsigned int>(_goal.x), static_cast<unsigned int>(_goal.z));
@@ -31,9 +31,109 @@ void CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 
 	bool loop = true;
 
-	m_pOpenList->Insert(startNode);
+	for (CNode* node : m_tileGrid)
+	{
+		node->SetParent(nullptr);
+	}
 
-	while (loop)
+	m_priorityQueue.push(startNode);
+	m_openList.push_back(startNode);
+
+	while (!m_priorityQueue.empty())
+	{
+		current = m_priorityQueue.top();
+
+		m_priorityQueue.pop();
+
+		m_closeList.push_back(current);
+
+		for (int y : dy)
+		{
+			for (int x : dx)
+			{
+				nextX = current.m_x + x;
+				nextY = current.m_y + y;
+
+				if (nextX < 0 || nextX >= MAP_SIZE_MAX || nextY < 0 || nextY >= MAP_SIZE_MAX) continue;
+				if (x == 0 || y == 0) priority = 10;
+				else priority = 14;
+
+				pNode = m_tileGrid[nextY * MAP_SIZE_MAX + nextX];
+				
+				if (!SearchNode(m_closeList, *pNode) && _pMap[nextY * MAP_SIZE_MAX + nextX])
+				{
+					if (!SearchNode(m_openList, *pNode))
+					{
+						pNode->SetNode(goalNode, m_tileGrid[current.m_y * MAP_SIZE_MAX + current.m_x], priority);
+						m_priorityQueue.push(*pNode);
+						m_openList.push_back(*pNode);
+					}
+					else continue;
+				}
+
+				if (pNode->m_x == static_cast<unsigned int>(_goal.x) && pNode->m_y == static_cast<unsigned int>(_goal.z))
+				{
+					vector<VECTOR3> temp;
+					pNode->GetParent(temp);
+
+
+					// 0 = x, 1 = y, 2 = xy
+					int va = -1;
+
+					vector<VECTOR3> path;
+					VECTOR3 vector({ 0,0,0 });
+					VECTOR3 endVector = *(temp.end() - 1);
+					for (VECTOR3 v : temp) // begin은 무조건 들어간다
+					{
+						if (v.x == endVector.x && v.z == endVector.z)
+						{
+							path.push_back(v);
+							break;
+						}
+
+						if (vector.x != v.x && vector.z != v.z)
+						{
+							if (va != 2)
+							{
+								va = 2;
+								path.push_back(v);
+							}
+						}
+						else if (vector.x != v.x)
+						{
+							if (va != 0)
+							{
+								va = 0;
+								path.push_back(v);
+							}
+						}
+						else if (vector.z != v.z)
+						{
+							if (va != 1)
+							{
+								va = 1;
+								path.push_back(v);
+							}
+						}
+						vector = v;
+					}
+
+					loop = false;
+
+					m_openList.clear();
+					m_closeList.clear();
+
+					return path;
+				}
+			}
+		}
+	}
+
+	/////////////////////////////////////////////
+
+	/*m_pOpenList->Insert(startNode);
+
+	while (!m_pOpenList->IsEmpty())
 	{
 		current = m_pOpenList->Top();
 
@@ -41,19 +141,19 @@ void CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 
 		m_closeList.push_back(current);
 
-		for (int y = 0; y < ARRAY_MAX; y++)
+		for (int y : dy)
 		{
-			for (int x = 0; x < ARRAY_MAX; x++)
+			for (int x : dx)
 			{
-				nextX = current.m_x + dx[x];
-				nextY = current.m_y + dy[y];
+				nextX = current.m_x + x;
+				nextY = current.m_y + y;
 
 				if (nextX < 0 || nextX >= MAP_SIZE_MAX || nextY < 0 || nextY >= MAP_SIZE_MAX) continue;
-				if (dx[x] == 0 || dy[y] == 0) priority = 10;
+				if (x == 0 || y == 0) priority = 10;
 				else priority = 14;
 
 				pNode = m_tileGrid[nextY * MAP_SIZE_MAX + nextX];
-				if (!SearchNode(*pNode) && _pMap[nextY * MAP_SIZE_MAX + nextX])
+				if (!SearchNode(m_closeList, *pNode) && _pMap[nextY * MAP_SIZE_MAX + nextX])
 				{
 					if (!m_pOpenList->Find(*pNode))
 					{
@@ -66,17 +166,16 @@ void CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 				if (pNode->m_x == static_cast<unsigned int>(_goal.x) && pNode->m_y == static_cast<unsigned int>(_goal.z))
 				{
 					loop = false;
+					return;
 				}
 			}
 		}
-
-
-	}
+	}*/
 }
 
-bool CAStar::SearchNode(CNode _node)
+bool CAStar::SearchNode(node_t _vector, CNode _node)
 {
-	for (CNode node : m_closeList)
+	for (CNode node : _vector)
 	{
 		if (node.m_x == _node.m_x && node.m_y == _node.m_y) return true;
 	}

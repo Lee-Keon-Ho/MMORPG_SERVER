@@ -1,6 +1,7 @@
 #pragma once
-#include "Navigation.h"
 #include "Monster.h"
+
+class CMap;
 
 class CMonsterManager
 {
@@ -18,10 +19,15 @@ private:
 	~CMonsterManager();
 
 private:
-	monsterList_t m_monsterList;
-	CNavigation* m_pNavigation;
-
+	monsterList_t	m_monsterList;
+	//CMap*			m_pMap;
 public:
 	void Start();
 	void RunLoop();
+
+	static unsigned int _stdcall MonsterManagerThreadFunc(void* _pArgs);
+
+	bool Init(const char* _fileName);
+	void CreateMonster();
+	//void SetMap(CMap* _pMap);
 };

@@ -2,9 +2,9 @@
 #include "UserManager.h"
 CMap::CMap()
 {
-	for (int i = 0; i < 43; i++)
+	for (int i = 0; i < 15; i++)
 	{
-		for (int x = 0; x < 43; x++)
+		for (int x = 0; x < 15; x++)
 		{
 			m_sector.push_back(new CSector(x, i));
 		}
@@ -16,16 +16,19 @@ CMap::CMap()
 	int nx;
 	int ny;
 
-	for (int y = 0; y < 43; y++) {
-		for (int x = 0; x < 43; x++) {
-			int index = y * 43 + x;
+	for (int y = 0; y < 15; y++) 
+	{
+		for (int x = 0; x < 15; x++) 
+		{
+			int index = y * 15 + x;
 			
-			for (int i = 0; i < 9; i++) {
-				int nx = x + dx[i];
-				int ny = y + dy[i];
-				if (nx < 0 || nx >= 43 || ny < 0 || ny >= 43) continue;
+			for (int i = 0; i < 9; i++) 
+			{
+				nx = x + dx[i];
+				ny = y + dy[i];
+				if (nx < 0 || nx >= 15 || ny < 0 || ny >= 15) continue;
 
-				m_sector[index]->SetAdjacentSector(m_sector[ny * 43 + nx]);
+				m_sector[index]->SetAdjacentSector(m_sector[ny * 15 + nx]);
 			}
 		}
 	}
@@ -44,6 +47,16 @@ void CMap::Add(CUser* _pUser, int _sector)
 void CMap::Del(CUser* _pUser, int _sector)
 {
 	m_sector[_sector]->Del(_pUser);
+}
+
+void CMap::Add(CMonster* _pMonster, int _sector)
+{
+	m_sector[_sector]->Add(_pMonster);
+}
+
+void CMap::Del(CMonster* _pMonster, int _sector)
+{
+	m_sector[_sector]->Del(_pMonster);
 }
 
 void CMap::CheckSectorUpdates(CUser* _pUser)
@@ -67,7 +80,7 @@ void CMap::InSector(CUser& _user)
 
 	packet.size = sizeof(PACKET_INSECTOR);
 	packet.type = CS_PT_INSECTOR;
-	packet.number = _user.GetNumber();
+	packet.index = _user.GetIndex();
 	packet.currentPosition = *_user.GetPosition();
 	packet.endPosition = *_user.GetEndPosition();
 
@@ -77,14 +90,8 @@ void CMap::InSector(CUser& _user)
 	// b - a
 	std::vector<CSector*> result = SetDifference(nowSector, prevSector);
 
-	std::vector<CSector*>::iterator iter = result.begin();
-	std::vector<CSector*>::iterator iterEnd = result.end();
-
-	CSector* pSector;
-
-	for (; iter != iterEnd; iter++)
+	for (CSector* pSector : result)
 	{
-		pSector = *iter;
 		pSector->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_INSECTOR));
 		pSector->FetchUserInfoInNewSector(_user);
 	}
@@ -96,7 +103,7 @@ void CMap::OutSector(CUser& _user)
 
 	packet.size = static_cast<u_short>(sizeof(PACKET_OUTSECTOR));
 	packet.type = static_cast<u_short>(CS_PT_OUTSECTOR);
-	packet.number = static_cast<u_short>(_user.GetNumber());
+	packet.index = static_cast<u_short>(_user.GetIndex());
 
 	int prevSector = _user.GetPrevSector(); // a
 	int nowSector = _user.GetNowSector(); // b
@@ -104,14 +111,8 @@ void CMap::OutSector(CUser& _user)
 	// a - b
 	std::vector<CSector*> result = SetDifference(prevSector, nowSector);
 
-	std::vector<CSector*>::iterator iter = result.begin();
-	std::vector<CSector*>::iterator iterEnd = result.end();
-
-	CSector* pSector;
-
-	for (; iter != iterEnd; iter++)
+	for (CSector* pSector : result)
 	{
-		pSector = *iter;
 		pSector->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_OUTSECTOR));
 		pSector->DeleteUsersOutOfSector(_user);
 	}
@@ -122,7 +123,7 @@ void CMap::SendAll(char* _buffer, int _size, int _sector)
 	m_sector[_sector]->SendAll(_buffer, _size);
 }
 
-std::map<SOCKET, CUser*> CMap::GetMap(int _sector)
+std::map<SOCKET, CUser*> CMap::GetMap(int _sector) // Get
 {
 	return m_sector[_sector]->GetMap();
 }
@@ -140,4 +141,14 @@ CSector* CMap::GetSector(int _index)
 std::vector<CSector*> CMap::SetDifference(int _a, int _b)
 {
 	return m_sector[_a]->Difference(m_sector[_b]->GetAdjacentSector());
+}
+
+void CMap::DifferenceSend(char* _buffer, int _size, int _a, int _b)
+{
+	std::vector<CSector*> result = m_sector[_a]->Difference(m_sector[_b]->GetAdjacentSector());
+
+	for (CSector* pSector : result)
+	{
+		pSector->Send(_buffer, _size);
+	}
 }

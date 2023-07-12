@@ -1,4 +1,6 @@
 #pragma once
+#include "VECTOR.h"
+#include <vector>
 
 class CNode
 {
@@ -16,7 +18,8 @@ public:
 	CNode(unsigned int _x, unsigned int _y);
 	~CNode();
 
-	CNode* GetParent(); // delete
+	void GetParent(std::vector<VECTOR3>& _vector);
 
 	void SetNode(CNode _pEnd, CNode* _pParent, unsigned int _dest);
+	void SetParent(CNode* _pParent);
 };

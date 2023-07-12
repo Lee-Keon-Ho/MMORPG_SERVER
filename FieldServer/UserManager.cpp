@@ -1,6 +1,7 @@
 #include "UserManager.h"
+#include "Map.h"
 
-CUserManager::CUserManager() : m_userNumber(0), currentSectorcount(0)
+CUserManager::CUserManager() : m_userNumber(0), m_pMap(nullptr)
 {
 	InitializeCriticalSection(&m_cs_user);
 }
@@ -53,21 +54,9 @@ void CUserManager::SendAll(char* _buffer, int _size)
 	std::list<CUser*> userList = m_userList;
 	LeaveCriticalSection(&m_cs_user);
 
-	std::list<CUser*>::iterator iter = userList.begin();
-	std::list<CUser*>::iterator iterEnd = userList.end();
-
-	if (iter == iterEnd)
+	for (CUser* pUser : userList)
 	{
-		return;
-	}
-
-	CUser* pUser;
-
-	for (; iter != iterEnd; iter++)
-	{
-		pUser = *iter;
 		pUser->Send(_buffer, _size);
-		break;
 	}
 }
 
@@ -77,19 +66,8 @@ void CUserManager::SendAll(char* _buffer, int _size, SOCKET _socket)
 	std::list<CUser*> userList = m_userList;
 	LeaveCriticalSection(&m_cs_user);
 
-	std::list<CUser*>::iterator iter = userList.begin();
-	std::list<CUser*>::iterator iterEnd = userList.end();
-
-	if (iter == iterEnd)
+	for (CUser* pUser : m_userList)
 	{
-		return;
-	}
-
-	CUser* pUser;
-
-	for (; iter != iterEnd; iter++)
-	{
-		pUser = *iter;
 		if (pUser->GetSocket() != _socket)
 		{
 			pUser->Send(_buffer, _size);
@@ -110,9 +88,13 @@ void CUserManager::SendUserCount(CUser& _user)
 	tempBuffer += sizeof(u_short);
 	*(u_short*)tempBuffer = GetUserCount();
 	tempBuffer += sizeof(u_short);
-	currentSectorcount = _user.GetUserCountInSector();
-	*(u_short*)tempBuffer = currentSectorcount;
+	*(u_short*)tempBuffer = _user.GetUserCountInSector();
 	tempBuffer += sizeof(u_short);
 
 	_user.Send(sendBuffer, tempBuffer - sendBuffer);
+}
+
+void CUserManager::SetMap(CMap* _map)
+{
+	m_pMap = _map;
 }

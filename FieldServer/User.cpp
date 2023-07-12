@@ -29,8 +29,6 @@ int CUser::PacketHandle()
 
 	int readSize = CPacketHandler::GetInstance()->Handle(this, readBuffer);
 
-	
-
 	if (readSize > 0)
 	{
 		m_ringBuffer->Read(readSize);
@@ -70,59 +68,54 @@ float CUser::GetRotationY()
 	return m_rotationY;
 }
 
-void CUser::SetNumber(int _num)
+void CUser::SetIndex(int _index)
 {
-	m_myNum = _num;
+	m_index = _index;
 	memcpy(m_name, "User0000", sizeof("User0000"));
-	m_name[4] = '0' + _num / 1000;
-	m_name[5] = '0' + (_num % 1000) / 100;
-	m_name[6] = '0' + (_num % 10) / 10;
-	m_name[7] = '0' + _num % 10;
+	m_name[4] = '0' + _index / 1000;
+	m_name[5] = '0' + (_index % 1000) / 100;
+	m_name[6] = '0' + (_index % 10) / 10;
+	m_name[7] = '0' + _index % 10;
 	m_name[8] = '\0';
 	
 	m_character = rand() % 3;
 }
 
-void CUser::SetState(int _state)
-{
-	m_state = _state;
-}
-
 void CUser::SetPrevSector()
 {
-	m_prevSector = (static_cast<int>(m_position.x) / 6) + (static_cast<int>(m_position.z) / 6) * 43;
+	m_prevSector = (static_cast<int>(m_position.x) / 18) + (static_cast<int>(m_position.z) / 18) * 15;
 }
 
-void CUser::SetNowSector(VECTOR3 _vector)
+void CUser::SetCurrentSector(VECTOR3 _vector)
 {
-	m_nowSector = (static_cast<int>(_vector.x) / 6) + (static_cast<int>(_vector.z) / 6) * 43;
+	m_currentSector = (static_cast<int>(_vector.x) / 18) + (static_cast<int>(_vector.z) / 18) * 15;
 }
 
-void CUser::SetUser(VECTOR3 _position)
+void CUser::SetInfo(VECTOR3 _position)
 {
 	CMap* map = CMap::GetInstance();
 
 	m_position = _position;
 	m_endPosition = _position;
-	m_prevSector = (static_cast<int>(_position.x) / 6) + (static_cast<int>(_position.z) / 6) * 43;
-	m_nowSector = (static_cast<int>(_position.x) / 6) + (static_cast<int>(_position.z) / 6) * 43;
+	m_prevSector = (static_cast<int>(_position.x) / 18) + (static_cast<int>(_position.z) / 18) * 15;
+	m_currentSector = (static_cast<int>(_position.x) / 18) + (static_cast<int>(_position.z) / 18) * 15;
 	m_pSector = map->GetSector(m_prevSector);
 	map->Add(this, m_prevSector);
 }
 
-void CUser::SetUser(VECTOR3 _current, VECTOR3 _end, int _state)
+void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, int _state)
 {
 	m_position = _current;
 	m_endPosition = _end;
 	m_state = _state;
 
-	if ((static_cast<int>(m_position.x) / 6) + (static_cast<int>(m_position.z) / 6) * 43 != m_prevSector)
+	if ((static_cast<int>(m_position.x) / 18) + (static_cast<int>(m_position.z) / 18) * 15 != m_prevSector)
 	{
 		CMap::GetInstance()->CheckSectorUpdates(this);
 	}
 }
 
-void CUser::SetUser(VECTOR3 _current, VECTOR3 _end, float _rotationY, int _state)
+void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, float _rotationY, int _state)
 {
 	m_position = _current;
 	m_endPosition = _end;
@@ -135,9 +128,9 @@ void CUser::SetSector()
 	m_pSector = CMap::GetInstance()->GetSector(m_prevSector);
 }
 
-int CUser::GetNumber()
+int CUser::GetIndex()
 {
-	return m_myNum;
+	return m_index;
 }
 
 int CUser::GetState()
@@ -152,12 +145,12 @@ int CUser::GetPrevSector()
 
 int CUser::GetNowSector()
 {
-	return m_nowSector;
+	return m_currentSector;
 }
 
 bool CUser::checkSector()
 {
-	return m_prevSector == m_nowSector;
+	return m_prevSector == m_currentSector;
 }
 
 int CUser::GetUserCountInSector()
@@ -170,7 +163,7 @@ void CUser::SendSector(char* _buffer, int _size)
 	m_pSector->SendAll(_buffer, _size);
 }
 
-void CUser::Infield()
+void CUser::SendPacket_Infield()
 {
 	char sendBuffer[1000];
 	char* tempBuffer;
@@ -207,7 +200,7 @@ void CUser::Infield()
 			{
 				pUser = (*iter).second;
 
-				*(u_short*)tempBuffer = pUser->GetNumber();
+				*(u_short*)tempBuffer = pUser->GetIndex();
 				tempBuffer += sizeof(u_short);
 				*(u_short*)tempBuffer = pUser->GetState();
 				tempBuffer += sizeof(u_short);
@@ -231,49 +224,48 @@ void CUser::Infield()
 	}
 }
 
-void CUser::LogIn()
+void CUser::SendPacket_LogIn()
 {
-	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_myNum, m_character, 9, m_name);
-	printf("%d %d\n", m_myNum, m_socket_info.socket);
+	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_index, m_character, 9, m_name);
+	printf("%d %d\n", m_index, m_socket_info.socket);
 	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEW_LOGIN));
 }
 
-void CUser::NewUser()
+void CUser::SendPacket_NewUserEntry()
 {
-	PACKET_NEWUSER packet(sizeof(PACKET_NEWUSER), CS_PT_NOWPOSITION, m_myNum, m_character, m_name, m_position);
-	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEWUSER));
+	PACKET_NEWUSERENTRY packet(sizeof(PACKET_NEWUSERENTRY), CS_PT_NEWUSERENTRY, m_index, m_character, m_name, m_position);
+	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEWUSERENTRY));
 
-	char sendBuffer[10];
-	char* tempBuffer = sendBuffer;
-	*(u_short*)tempBuffer = 6;
-	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = 19;
-	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = m_myNum;
-	tempBuffer += sizeof(u_short);
-
-	SendSector(sendBuffer, tempBuffer - sendBuffer);
-	//SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEWUSER));
+	SendPacket_AdjacentSector_NewUserEntry();
 }
 
-void CUser::NowPosition()
+void CUser::SendPacket_AdjacentSector_NewUserEntry()
 {
-	PACKET_NOWPOSITION packet(sizeof(PACKET_NOWPOSITION), 18, m_myNum, m_position);
+	PACKET_ADJACENTSECTOR_NEWUSERENTRY adjacentPacket(sizeof(PACKET_ADJACENTSECTOR_NEWUSERENTRY), CS_PT_SENDSECTOR_NEWUSERENTRY, m_index);
 
-	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_NOWPOSITION));
+	SendSector(reinterpret_cast<char*>(&adjacentPacket), sizeof(PACKET_ADJACENTSECTOR_NEWUSERENTRY));
 }
 
-void CUser::MoveUser()
-{
-	PACKET_MOVEUSER packet(sizeof(PACKET_MOVEUSER), CS_PT_MOVEUSER, m_myNum, m_position, m_endPosition);
+//void CUser::NowPosition()
+//{
+//	PACKET_NOWPOSITION packet(sizeof(PACKET_NOWPOSITION), 18, m_index, m_position);
+//
+//	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_NOWPOSITION));
+//}
 
-	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVEUSER));
+void CUser::SendPacket_Move()
+{
+	PACKET_MOVE_USER packet(sizeof(PACKET_MOVE_USER), CS_PT_MOVEUSER, m_index, m_position, m_endPosition);
+
+	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
+	//SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
 }
 
-void CUser::Arrive()
+void CUser::SendPacket_Arrive()
 {
-	PACKET_ARRIVE packet(sizeof(PACKET_ARRIVE), CS_PT_ARRIVE, m_myNum, m_rotationY, m_position);
+	PACKET_ARRIVE packet(sizeof(PACKET_ARRIVE), CS_PT_ARRIVE, m_index, m_rotationY, m_position);
 
+	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));
 	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));
 }
 

@@ -13,9 +13,10 @@ CNode::~CNode()
 {
 }
 
-CNode* CNode::GetParent()
+void CNode::GetParent(std::vector<VECTOR3>& _vector)
 {
-	return m_parent;
+	if (m_parent != nullptr) m_parent->GetParent(_vector);
+	_vector.push_back(VECTOR3(m_x, 1, m_y));
 }
 
 void CNode::SetNode(CNode _end, CNode* _parent, unsigned int _dest)
@@ -36,4 +37,9 @@ void CNode::SetNode(CNode _end, CNode* _parent, unsigned int _dest)
 	m_f = m_g + m_h;
 
 	m_parent = _parent;
+}
+
+void CNode::SetParent(CNode* _pParent)
+{
+	m_parent = _pParent;
 }

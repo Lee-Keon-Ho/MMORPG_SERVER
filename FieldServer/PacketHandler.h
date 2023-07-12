@@ -29,9 +29,8 @@ public:
 	void LogIn(CUser* _user, char* _buffer);
 	void InField(CUser* _user, char* _buffer);
 	void NewUser(CUser* _user);
-	void Dummy(CUser* _user, char* _buffer);
 	void NowPosition(CUser* _user, char* _buffer);
-	void MoveUser2(CUser* _user, char* _buffer);
+	void MoveUser(CUser* _user, char* _buffer);
 	void Arrive(CUser* _user, char* _buffer);
 	void LogOut(CUser* _user, char* _buffer);
 	void GetUserCount(CUser*_user);
