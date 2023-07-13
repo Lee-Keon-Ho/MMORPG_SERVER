@@ -123,7 +123,7 @@ void CPacketHandler::NowPosition(CUser* _user, char* _buffer)
 	_user->SetCurrentSector(position);
 
 	//_user->NowPosition();
-	//CMap::GetInstance()->CheckSectorUpdates(_user);
+	CMap::GetInstance()->CheckSectorUpdates(_user);
 }
 
 void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
@@ -139,8 +139,6 @@ void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
 	
 	_user->SetInfo(current, end, state);
 	_user->SendPacket_Move();
-
-	//sector->sendAll(packet);
 }
 
 void CPacketHandler::Arrive(CUser* _user, char* _buffer) // stop
@@ -158,7 +156,7 @@ void CPacketHandler::Arrive(CUser* _user, char* _buffer) // stop
 	_user->SetInfo(position, position, y, state);
 	_user->SetCurrentSector(position);
 
-	//CMap::GetInstance()->CheckSectorUpdates(_user);
+	CMap::GetInstance()->CheckSectorUpdates(_user);
 
 	_user->SendPacket_Arrive();
 }

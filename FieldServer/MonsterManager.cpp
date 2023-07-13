@@ -6,18 +6,18 @@
 
 CMonsterManager::CMonsterManager()
 {
-	//Init("ForestMonster1.bin"); // 이걸 유니티에서 한번에 작업해서 만드는게 더 좋아보이기는 한데...
-	//Init("ForestMonster2.bin");
-	//Init("ForestMonster2_1.bin");
-	//Init("ForestMonster3.bin");
-	//Init("ForestMonster3_1.bin");
-	//Init("ForestMonster3_2.bin");
-	//Init("ForestMonster3_3.bin");
-	//Init("ForestMonster4_1.bin");
-	//Init("ForestMonster4_2.bin");
-	//Init("ForestMonster4_3.bin");
-	//Init("ForestMonster4_4.bin");
-	//Init("ForestMonster4_5.bin");
+	Init("ForestMonster1.bin"); // 이걸 유니티에서 한번에 작업해서 만드는게 더 좋아보이기는 한데...
+	Init("ForestMonster2.bin");
+	Init("ForestMonster2_1.bin");
+	Init("ForestMonster3.bin");
+	Init("ForestMonster3_1.bin");
+	Init("ForestMonster3_2.bin");
+	Init("ForestMonster3_3.bin");
+	Init("ForestMonster4_1.bin");
+	Init("ForestMonster4_2.bin");
+	Init("ForestMonster4_3.bin");
+	Init("ForestMonster4_4.bin");
+	Init("ForestMonster4_5.bin");
 }
 
 CMonsterManager::~CMonsterManager()
@@ -71,10 +71,10 @@ bool CMonsterManager::Init(const char* _fileName)
 
 void CMonsterManager::CreateMonster()
 {
-	/*for (CMonster* m : m_monsterList)
+	for (CMonster* m : m_monsterList)
 	{
 		m->SendPacketCreate();
-	}*/
+	}
 }
 
 void CMonsterManager::RunLoop()
@@ -89,7 +89,7 @@ void CMonsterManager::RunLoop()
 	{
 		Sleep(100);
 
-		/*nowTick = ::timeGetTime();
+		nowTick = ::timeGetTime();
 
 		deltaTick = nowTick - prevTick;
 
@@ -107,6 +107,6 @@ void CMonsterManager::RunLoop()
 			m->SetNextDestination(walkable);
 
 			m->SendPacketMove();
-		}*/
+		}
 	}
 }
