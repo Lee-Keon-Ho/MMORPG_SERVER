@@ -72,7 +72,8 @@ void CMonster::Move(float _deltaTick)
 	if (_deltaTick > 0.13) _deltaTick = 0.12;
 
 	float distance = Distance();
-	
+	int sector;
+
 	if (distance >= 0.4f && distance < m_distance)
 	{
 		m_distance = distance;
@@ -84,6 +85,7 @@ void CMonster::Move(float _deltaTick)
 		m_distance = DISTANCE;
 		m_currentPosition = m_path[m_pathIndex];
 		m_pathIndex++;
+
 		if (m_pathIndex >= m_path.size())
 		{
 			m_state = IDLE;
@@ -91,6 +93,16 @@ void CMonster::Move(float _deltaTick)
 			m_currentPosition.x = m_destinationPosition.x;
 			m_currentPosition.z = m_destinationPosition.z;
 			m_pathIndex = 0;
+
+			sector = (static_cast<int>(m_currentPosition.x) / 18) + (static_cast<int>(m_currentPosition.z) / 18) * 15;
+
+			if (sector != m_currentSector)
+			{
+				SendPacketExitSector(m_currentSector, sector);
+				SendPacketEnterSector(sector, m_currentSector);
+				m_currentSector = sector;
+				m_pSector = CMap::GetInstance()->GetSector(m_currentSector);
+			}
 		}
 		else
 		{
@@ -98,7 +110,7 @@ void CMonster::Move(float _deltaTick)
 			SetUnitVector();
 		}
 
-		int sector = (static_cast<int>(m_currentPosition.x) / 18) + (static_cast<int>(m_currentPosition.z) / 18) * 15;
+		sector = (static_cast<int>(m_currentPosition.x) / 18) + (static_cast<int>(m_currentPosition.z) / 18) * 15;
 
 		if (sector != m_currentSector)
 		{
