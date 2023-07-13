@@ -93,16 +93,6 @@ void CMonster::Move(float _deltaTick)
 			m_currentPosition.x = m_destinationPosition.x;
 			m_currentPosition.z = m_destinationPosition.z;
 			m_pathIndex = 0;
-
-			sector = (static_cast<int>(m_currentPosition.x) / 18) + (static_cast<int>(m_currentPosition.z) / 18) * 15;
-
-			if (sector != m_currentSector)
-			{
-				SendPacketExitSector(m_currentSector, sector);
-				SendPacketEnterSector(sector, m_currentSector);
-				m_currentSector = sector;
-				m_pSector = CMap::GetInstance()->GetSector(m_currentSector);
-			}
 		}
 		else
 		{
