@@ -5,6 +5,10 @@
 #include "Monster.h"
 #include <map>
 #include <vector>
+
+#define SECTOR_SIZE 18
+#define SECTOR_LINE 15
+
 class CSector
 {
 private:

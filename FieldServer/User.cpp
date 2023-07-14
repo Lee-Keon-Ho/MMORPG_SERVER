@@ -83,12 +83,12 @@ void CUser::SetIndex(int _index)
 
 void CUser::SetPrevSector()
 {
-	m_prevSector = (static_cast<int>(m_position.x) / 18) + (static_cast<int>(m_position.z) / 18) * 15;
+	m_prevSector = (static_cast<int>(m_position.x) / SECTOR_SIZE) + (static_cast<int>(m_position.z) / SECTOR_SIZE) * 15;
 }
 
 void CUser::SetCurrentSector(VECTOR3 _vector)
 {
-	m_currentSector = (static_cast<int>(_vector.x) / 18) + (static_cast<int>(_vector.z) / 18) * 15;
+	m_currentSector = (static_cast<int>(_vector.x) / SECTOR_SIZE) + (static_cast<int>(_vector.z) / SECTOR_SIZE) * SECTOR_LINE;
 }
 
 void CUser::SetInfo(VECTOR3 _position)
@@ -97,8 +97,8 @@ void CUser::SetInfo(VECTOR3 _position)
 
 	m_position = _position;
 	m_endPosition = _position;
-	m_prevSector = (static_cast<int>(_position.x) / 18) + (static_cast<int>(_position.z) / 18) * 15;
-	m_currentSector = (static_cast<int>(_position.x) / 18) + (static_cast<int>(_position.z) / 18) * 15;
+	m_prevSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
+	m_currentSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
 	m_pSector = map->GetSector(m_prevSector);
 	map->Add(this, m_prevSector);
 }
@@ -109,7 +109,7 @@ void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, int _state)
 	m_endPosition = _end;
 	m_state = _state;
 
-	if ((static_cast<int>(m_position.x) / 18) + (static_cast<int>(m_position.z) / 18) * 15 != m_prevSector)
+	if ((static_cast<int>(m_position.x) / SECTOR_SIZE) + (static_cast<int>(m_position.z) / SECTOR_SIZE) * SECTOR_LINE != m_prevSector)
 	{
 		CMap::GetInstance()->CheckSectorUpdates(this);
 	}

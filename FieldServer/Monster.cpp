@@ -17,7 +17,7 @@ CMonster::CMonster() :
 	m_pathIndex(0)
 {
 	m_count = Random(100, 0);
-	m_currentSector = (static_cast<int>(m_currentPosition.x) / 18) + (static_cast<int>(m_currentPosition.z) / 18) * 15;
+	m_currentSector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
 
 	CMap::GetInstance()->Add(this, m_currentSector);
 }
@@ -34,7 +34,7 @@ CMonster::CMonster(VECTOR3 _position, VECTOR2_INT _rangeMin, VECTOR2_INT _rangeM
 	m_pathIndex(0)
 {
 	m_count = Random(100, 0);
-	m_currentSector = (static_cast<int>(m_currentPosition.x) / 18) + (static_cast<int>(m_currentPosition.z) / 18) * 15;
+	m_currentSector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
 	m_pSector = CMap::GetInstance()->GetSector(m_currentSector);
 	CMap::GetInstance()->Add(this, m_currentSector);
 }
@@ -86,6 +86,17 @@ void CMonster::Move(float _deltaTick)
 		m_currentPosition = m_path[m_pathIndex];
 		m_pathIndex++;
 
+		sector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
+
+		if (sector != m_currentSector)
+		{
+			SendPacketExitSector(m_currentSector, sector);
+			SendPacketEnterSector(sector, m_currentSector);
+			m_currentSector = sector;
+			m_pSector = CMap::GetInstance()->GetSector(m_currentSector);
+		}
+
+
 		if (m_pathIndex >= m_path.size())
 		{
 			m_state = IDLE;
@@ -98,16 +109,6 @@ void CMonster::Move(float _deltaTick)
 		{
 			SendPacketMove();
 			SetUnitVector();
-		}
-
-		sector = (static_cast<int>(m_currentPosition.x) / 18) + (static_cast<int>(m_currentPosition.z) / 18) * 15;
-
-		if (sector != m_currentSector)
-		{
-			SendPacketExitSector(m_currentSector, sector);
-			SendPacketEnterSector(sector, m_currentSector);
-			m_currentSector = sector;
-			m_pSector = CMap::GetInstance()->GetSector(m_currentSector);
 		}
 	}
 }
