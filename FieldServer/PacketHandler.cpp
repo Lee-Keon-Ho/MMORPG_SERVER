@@ -2,7 +2,7 @@
 #include "PacketStruct.h"
 #include "UserManager.h"
 #include "MonsterManager.h"
-#include "Map.h"
+#include "FieldManager.h"
 #include "PacketType.h"
 #include <algorithm>
 #include <iostream>
@@ -123,7 +123,7 @@ void CPacketHandler::NowPosition(CUser* _user, char* _buffer)
 	_user->SetCurrentSector(position);
 
 	//_user->NowPosition();
-	CMap::GetInstance()->CheckSectorUpdates(_user);
+	_user->CheckSectorUpdates();
 }
 
 void CPacketHandler::MoveUser(CUser* _user, char* _buffer)
@@ -156,7 +156,7 @@ void CPacketHandler::Arrive(CUser* _user, char* _buffer) // stop
 	_user->SetInfo(position, position, y, state);
 	_user->SetCurrentSector(position);
 
-	CMap::GetInstance()->CheckSectorUpdates(_user);
+	_user->CheckSectorUpdates();
 
 	_user->SendPacket_Arrive();
 }
@@ -169,7 +169,8 @@ void CPacketHandler::LogOut(CUser* _user, char* _buffer)
 
 	pUserManager->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_LOGOUT));
 	pUserManager->Del(_user);
-	CMap::GetInstance()->Del(_user, _user->GetNowSector());
+	
+	_user->LogOut();
 }
 
 void CPacketHandler::GetUserCount(CUser* _user)

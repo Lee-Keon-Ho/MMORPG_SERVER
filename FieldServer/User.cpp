@@ -1,6 +1,6 @@
 #include "User.h"
 #include "PacketHandler.h"
-#include "Map.h"
+#include "FieldManager.h"
 #include "UserManager.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,14 +93,14 @@ void CUser::SetCurrentSector(VECTOR3 _vector)
 
 void CUser::SetInfo(VECTOR3 _position)
 {
-	CMap* map = CMap::GetInstance();
+	m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT); // 나중에 맵정보를 변경하자
 
 	m_position = _position;
 	m_endPosition = _position;
 	m_prevSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
 	m_currentSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
-	m_pSector = map->GetSector(m_prevSector);
-	map->Add(this, m_prevSector);
+	m_pSector = m_pMap->GetSector(m_prevSector);
+	m_pMap->Add(this, m_prevSector);
 }
 
 void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, int _state)
@@ -111,7 +111,7 @@ void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, int _state)
 
 	if ((static_cast<int>(m_position.x) / SECTOR_SIZE) + (static_cast<int>(m_position.z) / SECTOR_SIZE) * SECTOR_LINE != m_prevSector)
 	{
-		CMap::GetInstance()->CheckSectorUpdates(this);
+		CheckSectorUpdates();
 	}
 }
 
@@ -125,7 +125,7 @@ void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, float _rotationY, int _state
 
 void CUser::SetSector()
 {
-	m_pSector = CMap::GetInstance()->GetSector(m_prevSector);
+	m_pSector = m_pMap->GetSector(m_prevSector);
 }
 
 int CUser::GetIndex()
@@ -148,9 +148,22 @@ int CUser::GetNowSector()
 	return m_currentSector;
 }
 
-bool CUser::checkSector()
+void CUser::LogOut()
 {
-	return m_prevSector == m_currentSector;
+	m_pMap->Del(this, m_currentSector);
+}
+
+void CUser::CheckSectorUpdates()
+{
+	if (m_prevSector == m_currentSector)
+	{
+		m_pMap->Del(this, m_prevSector);
+		m_pMap->Add(this, m_currentSector);
+		m_pMap->OutSector(*this);
+		m_pMap->InSector(*this);
+		SetPrevSector();
+		SetSector();
+	}
 }
 
 int CUser::GetUserCountInSector()

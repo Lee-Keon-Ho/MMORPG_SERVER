@@ -5,6 +5,7 @@
 #include <vector>
 
 class CSector;
+class CMap;
 
 using Path = std::vector<VECTOR3>;
 
@@ -33,7 +34,7 @@ private:
 	bool			m_isMove;
 
 	CSector*		m_pSector;
-
+	CMap*			m_pMap;
 	float			m_distance;
 public:
 	CMonster();

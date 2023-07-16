@@ -5,7 +5,7 @@
 #include "MonsterManager.h"
 #include "Navigation.h"
 #include "User.h"
-#include "Map.h"
+#include "FieldManager.h"
 #include <stdio.h>
 
 #pragma comment (lib, "./../x64/Debug/NetCore.lib")
@@ -32,7 +32,7 @@ bool CFieldApp::Initialize()
 
 bool CFieldApp::CreateInstance()
 {
-	CMap::GetInstance();
+	CFieldManager::GetInstance();
 	CUserManager::GetInstance();
 	CMonsterManager::GetInstance();
 	CNavigation::GetInstance();

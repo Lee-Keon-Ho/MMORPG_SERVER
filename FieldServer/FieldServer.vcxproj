@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="AStar.cpp" />
+    <ClCompile Include="FieldManager.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="MapGrid.cpp" />
     <ClCompile Include="Monster.cpp" />
@@ -163,6 +164,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="AStar.h" />
+    <ClInclude Include="FieldManager.h" />
     <ClInclude Include="Navigation.h" />
     <ClInclude Include="Map.h" />
     <ClInclude Include="MapGrid.h" />

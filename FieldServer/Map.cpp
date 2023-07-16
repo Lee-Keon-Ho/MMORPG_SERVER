@@ -2,9 +2,9 @@
 #include "UserManager.h"
 CMap::CMap()
 {
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < SECTOR_LINE; i++)
 	{
-		for (int x = 0; x < 15; x++)
+		for (int x = 0; x < SECTOR_LINE; x++)
 		{
 			m_sector.push_back(new CSector(x, i));
 		}
@@ -16,19 +16,19 @@ CMap::CMap()
 	int nx;
 	int ny;
 
-	for (int y = 0; y < 15; y++) 
+	for (int y = 0; y < SECTOR_LINE; y++)
 	{
-		for (int x = 0; x < 15; x++) 
+		for (int x = 0; x < SECTOR_LINE; x++)
 		{
-			int index = y * 15 + x;
+			int index = y * SECTOR_LINE + x;
 			
 			for (int i = 0; i < 9; i++) 
 			{
 				nx = x + dx[i];
 				ny = y + dy[i];
-				if (nx < 0 || nx >= 15 || ny < 0 || ny >= 15) continue;
+				if (nx < 0 || nx >= SECTOR_LINE || ny < 0 || ny >= SECTOR_LINE) continue;
 
-				m_sector[index]->SetAdjacentSector(m_sector[ny * 15 + nx]);
+				m_sector[index]->SetAdjacentSector(m_sector[ny * SECTOR_LINE + nx]);
 			}
 		}
 	}
@@ -57,21 +57,6 @@ void CMap::Add(CMonster* _pMonster, int _sector)
 void CMap::Del(CMonster* _pMonster, int _sector)
 {
 	m_sector[_sector]->Del(_pMonster);
-}
-
-void CMap::CheckSectorUpdates(CUser* _pUser)
-{
-	if (!_pUser->checkSector())
-	{
-		Del(_pUser, _pUser->GetPrevSector());
-		Add(_pUser, _pUser->GetNowSector());
-		OutSector(*_pUser);
-		InSector(*_pUser);
-		_pUser->SetPrevSector();
-		_pUser->SetSector();
-
-		//CUserManager::GetInstance()->SendUserCount();
-	}
 }
 
 void CMap::InSector(CUser& _user)

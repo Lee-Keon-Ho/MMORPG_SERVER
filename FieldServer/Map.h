@@ -6,19 +6,8 @@
 #include "PacketType.h"
 #include <vector>
 
-class CMap
+class CMap // field // field에 sector가 있다 field에 유저가 들어가는 거다
 {
-public:
-	static CMap* GetInstance()
-	{
-		static CMap instance;
-		return &instance;
-	}
-
-private:
-	CMap();
-	~CMap();
-	
 public:
 	typedef std::vector<CSector*> Sector_t;
 	
@@ -27,12 +16,14 @@ private:
 
 	int m_userNumber;
 public:
+	CMap();
+	~CMap();
+
 	void Add(CUser* _pUser, int _sector);
 	void Del(CUser* _pUser, int _sector);
 	void Add(CMonster* _pMonster, int _sector);
 	void Del(CMonster* _pMonster, int _sector);
 
-	void CheckSectorUpdates(CUser* _pUser);
 	void InSector(CUser& _user);
 	void OutSector(CUser& _user);
 

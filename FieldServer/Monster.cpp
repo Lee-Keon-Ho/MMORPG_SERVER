@@ -1,6 +1,6 @@
 #include <WinSock2.h>
 #include "Monster.h"
-#include "Map.h"
+#include "FieldManager.h"
 #include "UserManager.h"
 #include <random>
 
@@ -19,7 +19,8 @@ CMonster::CMonster() :
 	m_count = Random(100, 0);
 	m_currentSector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
 
-	CMap::GetInstance()->Add(this, m_currentSector);
+	m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT);
+	m_pMap->Add(this, m_currentSector);
 }
 
 CMonster::CMonster(VECTOR3 _position, VECTOR2_INT _rangeMin, VECTOR2_INT _rangeMax, int _type, int _index) :
@@ -35,8 +36,10 @@ CMonster::CMonster(VECTOR3 _position, VECTOR2_INT _rangeMin, VECTOR2_INT _rangeM
 {
 	m_count = Random(100, 0);
 	m_currentSector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
-	m_pSector = CMap::GetInstance()->GetSector(m_currentSector);
-	CMap::GetInstance()->Add(this, m_currentSector);
+
+	m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT);
+	m_pMap->Add(this, m_currentSector);
+	m_pSector = m_pMap->GetSector(m_currentSector);
 }
 
 CMonster::~CMonster()
@@ -69,12 +72,11 @@ void CMonster::SendPacketMove()
 void CMonster::Move(float _deltaTick)
 {
 	if (!m_isMove) return;
-	if (_deltaTick > 0.13) _deltaTick = 0.12;
-
+	if (_deltaTick > static_cast<float>(0.13)) _deltaTick = static_cast <float>(0.12);
 	float distance = Distance();
 	int sector;
 
-	if (distance >= 0.4f && distance < m_distance)
+	if (distance >= static_cast <float>(0.4f) && distance < m_distance)
 	{
 		m_distance = distance;
 		m_currentPosition.x += (m_unitVector.x * 2.0f * _deltaTick);
@@ -93,7 +95,7 @@ void CMonster::Move(float _deltaTick)
 			SendPacketExitSector(m_currentSector, sector);
 			SendPacketEnterSector(sector, m_currentSector);
 			m_currentSector = sector;
-			m_pSector = CMap::GetInstance()->GetSector(m_currentSector);
+			m_pSector = m_pMap->GetSector(m_currentSector);
 		}
 
 
@@ -165,19 +167,19 @@ void CMonster::SetNextDestination(bool* _walkable)
 {
 	if (m_isMove) return;
 
-	int x;
-	int z;
+	u_int x;
+	u_int z;
 
 	while (true)
 	{
-		x = m_destinationPosition.x + Random(5, -5);
-		z = m_destinationPosition.z + Random(5, -5);
+		x = static_cast<u_int>(m_destinationPosition.x + Random(5, -5));
+		z = static_cast<u_int>(m_destinationPosition.z + Random(5, -5));
 		
 		if (_walkable[z * 256 + x] != 1) continue;
 		if (x <= m_rangeMax.x && x >= m_rangeMin.x && z <= m_rangeMax.z && z >= m_rangeMin.z)
 		{
-			m_destinationPosition.x = x;
-			m_destinationPosition.z = z;
+			m_destinationPosition.x = static_cast<float>(x);
+			m_destinationPosition.z = static_cast<float>(z);
 
 			m_path = CNavigation::GetInstance()->FindPath(m_currentPosition, m_destinationPosition);
 
@@ -215,19 +217,16 @@ void CMonster::SetUnitVector()
 
 void CMonster::SendPacketExitSector(int _sectorA, int _sectorB)
 {
-	CMap* pMap = CMap::GetInstance();
 	PACKET_EXIT_SECTOR_MONSTER packet(sizeof(PACKET_EXIT_SECTOR_MONSTER), CS_PT_EXIT_SECTOR_MONSTER, m_index, m_type);
 
-	pMap->Del(this, _sectorA);
-	pMap->DifferenceSend(reinterpret_cast<char*>(&packet), sizeof(PACKET_EXIT_SECTOR_MONSTER), _sectorA, _sectorB);
+	m_pMap->Del(this, _sectorA);
+	m_pMap->DifferenceSend(reinterpret_cast<char*>(&packet), sizeof(PACKET_EXIT_SECTOR_MONSTER), _sectorA, _sectorB);
 }
 
 void CMonster::SendPacketEnterSector(int _sectorA, int _sectorB)
 {
-	CMap* pMap = CMap::GetInstance();
-
 	PACKET_ENTER_SECTOR_MONSTER packet(sizeof(PACKET_ENTER_SECTOR_MONSTER), CS_PT_ENTER_SECTOR_MONSTER, m_index, m_type, m_currentPosition);
 
-	pMap->Add(this, _sectorA);
-	pMap->DifferenceSend(reinterpret_cast<char*>(&packet), sizeof(PACKET_ENTER_SECTOR_MONSTER), _sectorA, _sectorB);
+	m_pMap->Add(this, _sectorA);
+	m_pMap->DifferenceSend(reinterpret_cast<char*>(&packet), sizeof(PACKET_ENTER_SECTOR_MONSTER), _sectorA, _sectorB);
 }

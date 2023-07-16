@@ -1,6 +1,6 @@
 #pragma once
 
-static struct VECTOR3
+struct VECTOR3
 {
 	float x;
 	float y;
@@ -9,7 +9,7 @@ static struct VECTOR3
 	VECTOR3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 };
 
-static struct VECTOR2_INT
+struct VECTOR2_INT
 {
 	unsigned int x;
 	unsigned int z;

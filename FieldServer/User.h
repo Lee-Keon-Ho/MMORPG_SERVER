@@ -4,6 +4,7 @@
 #include <string>
 
 class CSector;
+class CMap;
 
 class CUser : public CSession
 {
@@ -18,6 +19,7 @@ private:
 	char*		m_name;
 	int			m_character; // 나중에 db로 빠질 부분
 
+	CMap* m_pMap;
 	CSector*	m_pSector;
 public:
 	CUser();
@@ -47,7 +49,8 @@ public:
 	const char* GetName();
 	int GetCharacter();
 
-	bool checkSector();
+	void LogOut();
+	void CheckSectorUpdates();
 	void SendSector(char* _buffer, int _size);
 	void SendPacket_Infield();
 	void SendPacket_LogIn();
