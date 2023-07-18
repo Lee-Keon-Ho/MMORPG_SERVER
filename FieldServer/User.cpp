@@ -155,7 +155,7 @@ void CUser::LogOut()
 
 void CUser::CheckSectorUpdates()
 {
-	if (m_prevSector == m_currentSector)
+	if (m_prevSector != m_currentSector)
 	{
 		m_pMap->Del(this, m_prevSector);
 		m_pMap->Add(this, m_currentSector);
@@ -189,7 +189,7 @@ void CUser::SendPacket_Infield()
 	for (int i = 0; i < adjacentSecotor.size(); i++)
 	{
 		std::map<SOCKET, CUser*> userList_t = adjacentSecotor[i]->GetMap();
-		userCount = userList_t.size();
+		userCount = static_cast<int>(userList_t.size());
 
 		if (userCount == 0) continue;
 
@@ -229,9 +229,9 @@ void CUser::SendPacket_Infield()
 				tempBuffer += sizeof(VECTOR3);
 			}
 
-			Send(sendBuffer, tempBuffer - sendBuffer);
+			Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
 			count++;
-			userCount = userList_t.size() - (10 * count);
+			userCount = static_cast<int>(userList_t.size()) - (10 * count);
 		}
 		count = 0;
 	}
@@ -240,7 +240,7 @@ void CUser::SendPacket_Infield()
 void CUser::SendPacket_LogIn()
 {
 	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_index, m_character, 9, m_name);
-	printf("%d %d\n", m_index, m_socket_info.socket);
+	printf("%ld %ld\n", m_index, m_socket_info.socket);
 	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEW_LOGIN));
 }
 

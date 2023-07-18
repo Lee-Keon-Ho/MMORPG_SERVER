@@ -56,9 +56,9 @@ bool CMonsterManager::Init(const char* _fileName)
 	fread(&rangeMin, sizeof(VECTOR2_INT), 1, file);
 	fread(&rangeMax, sizeof(VECTOR2_INT), 1, file);
 
-	size += m_monsterList.size();
+	size += static_cast<int>(m_monsterList.size());
 
-	for (int i = m_monsterList.size(); i < size; i++)
+	for (int i = static_cast<int>(m_monsterList.size()); i < size; i++)
 	{
 		fread(&vector3, sizeof(VECTOR3), 1, file);
 		m_monsterList.push_back(new CMonster(vector3, rangeMin, rangeMax, type, i));
@@ -97,16 +97,17 @@ void CMonsterManager::RunLoop()
 
 		for (CMonster* m : m_monsterList)
 		{
-			m->Move(deltaTick * 0.001);
+			m->Move(deltaTick * static_cast<float>(0.001));
 		}
 
 		for (CMonster* m : m_monsterList)
 		{
 			if (!m->CheckMovement()) continue;
 
-			m->SetNextDestination(walkable);
-
-			m->SendPacketMove();
+			if (m->SetNextDestination(walkable))
+			{
+				m->SendPacketMove();
+			}
 		}
 	}
 }

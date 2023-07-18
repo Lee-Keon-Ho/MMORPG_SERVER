@@ -21,15 +21,12 @@ using PriorityQueue = priority_queue<CNode, node_t, compare>;
 class CAStar
 {
 private:
-	PriorityQueue m_priorityQueue;
-
-
-	CPriorityQueue* m_pOpenList;
-	node_t m_openList;
-	node_t m_closeList;
-	std::vector<CNode*> m_tileGrid;
-	int dx[ARRAY_MAX] = { -1,0,1 };
-	int dy[ARRAY_MAX] = { 1,0,-1 };
+	CPriorityQueue*			m_pOpenList;
+	node_t					m_openList;
+	node_t					m_closeList;
+	std::vector<CNode*>		m_tileGrid;
+	int						dx[ARRAY_MAX] = { -1,0,1 };
+	int						dy[ARRAY_MAX] = { 1,0,-1 };
 	
 public:
 	CAStar();

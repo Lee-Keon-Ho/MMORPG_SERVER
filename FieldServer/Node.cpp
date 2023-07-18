@@ -16,7 +16,7 @@ CNode::~CNode()
 void CNode::GetParent(std::vector<VECTOR3>& _vector)
 {
 	if (m_parent != nullptr) m_parent->GetParent(_vector);
-	_vector.push_back(VECTOR3(m_x, 1, m_y));
+	_vector.push_back(VECTOR3(static_cast<float>(m_x), 1, static_cast<float>(m_y)));
 }
 
 void CNode::SetNode(CNode _end, CNode* _parent, unsigned int _dest)

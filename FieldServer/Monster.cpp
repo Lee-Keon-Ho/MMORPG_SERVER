@@ -84,10 +84,6 @@ void CMonster::Move(float _deltaTick)
 	}
 	else
 	{
-		m_distance = DISTANCE;
-		m_currentPosition = m_path[m_pathIndex];
-		m_pathIndex++;
-
 		sector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
 
 		if (sector != m_currentSector)
@@ -98,6 +94,9 @@ void CMonster::Move(float _deltaTick)
 			m_pSector = m_pMap->GetSector(m_currentSector);
 		}
 
+		m_distance = DISTANCE;
+		m_currentPosition = m_path[m_pathIndex];
+		m_pathIndex++;
 
 		if (m_pathIndex >= m_path.size())
 		{
@@ -163,10 +162,8 @@ int CMonster::Random(int _max, int _min)
 	return dist(gen);
 }
 
-void CMonster::SetNextDestination(bool* _walkable)
+bool CMonster::SetNextDestination(bool* _walkable)
 {
-	if (m_isMove) return;
-
 	u_int x;
 	u_int z;
 
@@ -188,22 +185,20 @@ void CMonster::SetNextDestination(bool* _walkable)
 		}
 	}
 
-	if (m_path.size() != 1)
+	if (m_path.size() > 1 && m_path.size() < 100)
 	{
 		SetUnitVector();
 		if (Distance() >= 0.4f)
 		{
 			m_isMove = true;
 			m_state = RUN;
-		}
-		else
-		{
-			m_isMove = false;
-			m_state = IDLE;
+			return true;
 		}
 	}
 
 	m_distance = DISTANCE;
+
+	return false;
 }
 
 void CMonster::SetUnitVector()
@@ -225,8 +220,8 @@ void CMonster::SendPacketExitSector(int _sectorA, int _sectorB)
 
 void CMonster::SendPacketEnterSector(int _sectorA, int _sectorB)
 {
-	PACKET_ENTER_SECTOR_MONSTER packet(sizeof(PACKET_ENTER_SECTOR_MONSTER), CS_PT_ENTER_SECTOR_MONSTER, m_index, m_type, m_currentPosition);
-
+	PACKET_ENTER_SECTOR_MONSTER packet(sizeof(PACKET_ENTER_SECTOR_MONSTER), CS_PT_ENTER_SECTOR_MONSTER, m_index, m_type, m_currentPosition, m_path[m_pathIndex]);
+	
 	m_pMap->Add(this, _sectorA);
 	m_pMap->DifferenceSend(reinterpret_cast<char*>(&packet), sizeof(PACKET_ENTER_SECTOR_MONSTER), _sectorA, _sectorB);
 }

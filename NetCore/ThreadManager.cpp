@@ -7,7 +7,7 @@ CThreadManager::CThreadManager()
 
 CThreadManager::~CThreadManager()
 {
-	int size = m_thread.size();
+	int size = static_cast<int>(m_thread.size());
 	CWorkerThread* pWorkerThread = nullptr;
 
 	for (int i = 0; i < size; i++)
@@ -18,7 +18,7 @@ CThreadManager::~CThreadManager()
 	m_thread.clear();
 }
 
-bool CThreadManager::Start(int _size)
+bool CThreadManager::Start(u_int _size)
 {
 	CWorkerThread* workerThread;
 	// 여기는 try catch가 더 좋을거 같다

@@ -44,7 +44,7 @@ void CSector::DeleteUsersOutOfSector(CUser& _user)
 	userMap_t userList = m_userList;
 	LeaveCriticalSection(&m_cs_user);
 	
-	int size = userList.size();
+	int size = static_cast<int>(userList.size());
 	
 	//if (size <= 0) return;
 
@@ -76,10 +76,10 @@ void CSector::DeleteUsersOutOfSector(CUser& _user)
 			*(u_short*)tempBuffer = pUser->GetIndex();
 			tempBuffer += sizeof(u_short);
 		}
-		_user.Send(sendBuffer, tempBuffer - sendBuffer);
+		_user.Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
 
 		count++;
-		size = userList.size() - (10 * count);
+		size = static_cast<int>(userList.size()) - (10 * count);
 	}
 
 	EnterCriticalSection(&m_cs_monster);
@@ -91,7 +91,7 @@ void CSector::DeleteUsersOutOfSector(CUser& _user)
 
 	CMonster* pMonster;
 	count = 0;
-	size = monsterList.size();
+	size = static_cast<int>(monsterList.size());
 	while (mIter != mIterEnd)
 	{
 		if (size > 10) size = 10; 
@@ -112,10 +112,10 @@ void CSector::DeleteUsersOutOfSector(CUser& _user)
 			*(u_short*)tempBuffer = pMonster->GetIndex();
 			tempBuffer += sizeof(u_short);
 		}
-		_user.Send(sendBuffer, tempBuffer - sendBuffer);
+		_user.Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
 
 		count++;
-		size = monsterList.size() - (10 * count);
+		size = static_cast<int>(monsterList.size()) - (10 * count);
 	}
 }
 
@@ -125,7 +125,7 @@ void CSector::FetchUserInfoInNewSector(CUser& _user)
 	std::map<SOCKET, CUser*> userList = m_userList;
 	LeaveCriticalSection(&m_cs_user);
 
-	int size = userList.size();
+	int size = static_cast<int>(userList.size());
 
 	//if (size <= 0) return;
 
@@ -165,10 +165,10 @@ void CSector::FetchUserInfoInNewSector(CUser& _user)
 			memcpy(tempBuffer, pUser->GetEndPosition(), sizeof(VECTOR3));
 			tempBuffer += sizeof(VECTOR3);
 		}
-		_user.Send(sendBuffer, tempBuffer - sendBuffer);
+		_user.Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
 
 		count++;
-		size = userList.size() - (10 * count);
+		size = static_cast<int>(userList.size()) - (10 * count);
 	}
 
 	EnterCriticalSection(&m_cs_monster);
@@ -180,7 +180,7 @@ void CSector::FetchUserInfoInNewSector(CUser& _user)
 
 	CMonster* pMonster;
 	count = 0;
-	size = monsterList.size();
+	size = static_cast<int>(monsterList.size());
 	while (mIter != mIterEnd)
 	{
 		if (size > 10) size = 10;
@@ -207,10 +207,10 @@ void CSector::FetchUserInfoInNewSector(CUser& _user)
 			memcpy(tempBuffer, pMonster->GetDestinationPosition(), sizeof(VECTOR3));
 			tempBuffer += sizeof(VECTOR3);
 		}
-		_user.Send(sendBuffer, tempBuffer - sendBuffer);
+		_user.Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
 
 		count++;
-		size = monsterList.size() - (10 * count);
+		size = static_cast<int>(monsterList.size()) - (10 * count);
 	}
 }
 
@@ -279,14 +279,14 @@ void CSector::SendAll(char* _buffer, int _size)
 
 int CSector::Size()
 {
-	return m_userList.size();
+	return static_cast<int>(m_userList.size());
 }
 
 int CSector::GetSectorUserCount()
 {
 	if (this == nullptr) return 0;
 	int count = 0;
-	int size = m_AdjacentSector.size();
+	int size = static_cast<int>(m_AdjacentSector.size());
 	for (int i = 0; i < size; i++)
 	{
 		count += m_AdjacentSector[i]->Size();

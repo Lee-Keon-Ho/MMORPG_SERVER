@@ -21,5 +21,4 @@ public:
 	~CQuadTree();
 
 	void insert(int _x, int _z);
-	bool Contains(CUser* _user);
 };

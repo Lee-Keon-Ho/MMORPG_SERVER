@@ -45,7 +45,7 @@ int CUserManager::AddUserNumber()
 
 int CUserManager::GetUserCount()
 {
-	return m_userList.size();
+	return static_cast<int>(m_userList.size());
 }
 
 void CUserManager::SendAll(char* _buffer, int _size)
@@ -91,7 +91,7 @@ void CUserManager::SendUserCount(CUser& _user)
 	*(u_short*)tempBuffer = _user.GetUserCountInSector();
 	tempBuffer += sizeof(u_short);
 
-	_user.Send(sendBuffer, tempBuffer - sendBuffer);
+	_user.Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
 }
 
 void CUserManager::SetMap(CMap* _map)

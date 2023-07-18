@@ -33,10 +33,3 @@ void CQuadTree::insert(int _x, int _z)
 		else m_pSe->insert(_x, _z);
 	}
 }
-
-bool CQuadTree::Contains(CUser* _user)
-{
-	if(_user->GetPosition()->x)
-	return false;
-
-}

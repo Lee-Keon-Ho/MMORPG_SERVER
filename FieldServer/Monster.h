@@ -44,7 +44,7 @@ public:
 	void SendPacketCreate();
 	void SendPacketMove();
 
-	void SetNextDestination(bool* _walkable);
+	bool SetNextDestination(bool* _walkable);
 	void Move(float _deltaTick);
 	bool CheckMovement();
 	int GetIndex();

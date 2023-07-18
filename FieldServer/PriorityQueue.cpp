@@ -48,7 +48,6 @@ CNode CPriorityQueue::Top()
 
 void CPriorityQueue::Pop()
 {
-	int parentIndex;
 	int size = --m_size;
 	int index = 1;
 	int childIndex;

@@ -188,8 +188,9 @@ struct PACKET_ENTER_SECTOR_MONSTER : PACKET
 	u_short index;
 	u_short monsterType;
 	VECTOR3 currentPosition;
+	VECTOR3 m_destinationPosition;
 
-	PACKET_ENTER_SECTOR_MONSTER() : index(0), monsterType(0), currentPosition({0,0,0}) {}
-	PACKET_ENTER_SECTOR_MONSTER(u_short _size, u_short _type, u_short _index, u_short _monsterType, VECTOR3 _currentPosition) : PACKET(_size, _type), index(_index), monsterType(_monsterType), currentPosition(_currentPosition) {}
+	PACKET_ENTER_SECTOR_MONSTER() : index(0), monsterType(0), currentPosition({ 0,0,0 }), m_destinationPosition({0,0,0}) {}
+	PACKET_ENTER_SECTOR_MONSTER(u_short _size, u_short _type, u_short _index, u_short _monsterType, VECTOR3 _currentPosition, VECTOR3 _destinationPosition) : PACKET(_size, _type), index(_index), monsterType(_monsterType), currentPosition(_currentPosition), m_destinationPosition(_destinationPosition) {}
 };
 #pragma pack( pop )
