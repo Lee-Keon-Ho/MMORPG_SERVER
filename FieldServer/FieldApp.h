@@ -6,9 +6,9 @@
 class CFieldApp : public CApp
 {
 private:
-	CThreadManager* m_pThreadManager;
-	CFieldAcceptor* m_pFieldAcceptor;
-	CMap*			m_pMap; // field
+	CThreadManager*		m_pThreadManager;
+	CFieldAcceptor*		m_pFieldAcceptor;
+
 public:
 	CFieldApp();
 	~CFieldApp();

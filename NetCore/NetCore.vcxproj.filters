@@ -39,6 +39,9 @@
     <ClInclude Include="TAcceptor.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Lock.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TcpListener.cpp">
@@ -63,6 +66,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TAcceptor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Lock.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

@@ -79,6 +79,7 @@ void CMap::InSector(CUser& _user)
 	{
 		pSector->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_INSECTOR));
 		pSector->FetchUserInfoInNewSector(_user);
+		pSector->FetchMonsgerInfoInNewSector(_user);
 	}
 }
 
@@ -100,6 +101,7 @@ void CMap::OutSector(CUser& _user)
 	{
 		pSector->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_OUTSECTOR));
 		pSector->DeleteUsersOutOfSector(_user);
+		pSector->DeleteMonstersOutOfSector(_user);
 	}
 }
 

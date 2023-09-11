@@ -19,6 +19,6 @@ private:
 	CAStar* m_pAStar;
 
 public:
-	std::vector<VECTOR3> FindPath(VECTOR3 _start, VECTOR3 _goal);
+	std::vector<VECTOR3> FindPath(VECTOR3& _start, VECTOR3& _goal);
 	bool* GetWalkable();
 };

@@ -13,7 +13,7 @@ public:
 	~CTAcceptor();
 
 	bool Start();
-	void RunLoop();
+	void RunLoop() override;
 
 	virtual void Handle(ACCEPT_SOCKET_INFO _socket) = 0;
 };

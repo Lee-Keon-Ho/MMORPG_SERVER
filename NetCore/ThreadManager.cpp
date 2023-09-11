@@ -21,7 +21,7 @@ CThreadManager::~CThreadManager()
 bool CThreadManager::Start(u_int _size)
 {
 	CWorkerThread* workerThread;
-	// 여기는 try catch가 더 좋을거 같다
+
 	for (unsigned int i = 0; i < _size; ++i)
 	{
 		workerThread = new CWorkerThread();

@@ -1,8 +1,10 @@
-#include "session.h"
 #include "IOCP.h"
+#include "session.h"
+#include "RingBuffer.h"
 #include <stdio.h>
 #include <iostream>
 #include <exception>
+#include <assert.h>
 
 #define BUFFER_MAX 1000
 
@@ -32,7 +34,6 @@ CSession::~CSession()
 
 bool CSession::Send(char* _buffer, int _size)
 {
-	//int sendSize = send(m_socket_info.socket, _buffer, _size, 0); // 블록킹 함수
 	DWORD sendSize = 0;
 	DWORD flags = 0;
 	DWORD err = 0;
@@ -42,12 +43,12 @@ bool CSession::Send(char* _buffer, int _size)
 
 	if (WSASend(m_socket_info.socket, &buffer, 1, &sendSize, 0, NULL, NULL) == SOCKET_ERROR) // 논 블록킹 함수
 	{
-		err = WSAGetLastError();// != WSAEWOULDBLOCK)
+		err = WSAGetLastError();
 		printf("Error WSASend would block %d \n", err);
 		return false;
 	}
 
-	//if (sendSize < 0) return false;
+	assert(sendSize > 0);
 
 	return true;
 }
@@ -73,15 +74,8 @@ bool CSession::Recv()
 void CSession::OnRecv(DWORD _size)
 {
 	m_ringBuffer->Write(_size);
+
 	PacketHandle();
-	/*try
-	{
-		
-	}
-	catch (std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-	}*/
 
 	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
 	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();

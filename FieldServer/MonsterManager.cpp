@@ -1,12 +1,13 @@
 #include "UserManager.h"
 #include "MonsterManager.h"
 #include "Navigation.h"
+#include "CBigSlimeLeaf.h"
 #include <process.h>
 #include <chrono>
 
-CMonsterManager::CMonsterManager()
+CMonsterManager::CMonsterManager() // 전체 몬스터를 관리할 것이냐, 맵의 몬스터만 관리할 것인가
 {
-	Init("ForestMonster1.bin"); // 이걸 유니티에서 한번에 작업해서 만드는게 더 좋아보이기는 한데...
+	Init("ForestMonster1.bin"); // map
 	Init("ForestMonster2.bin");
 	Init("ForestMonster2_1.bin");
 	Init("ForestMonster3.bin");
@@ -27,7 +28,7 @@ CMonsterManager::~CMonsterManager()
 void CMonsterManager::Start()
 {
 
-	HANDLE thread = (HANDLE)_beginthreadex(NULL, 0, &CMonsterManager::MonsterManagerThreadFunc, this, 0, NULL);
+	m_thread = (HANDLE)_beginthreadex(NULL, 0, &CMonsterManager::MonsterManagerThreadFunc, this, 0, NULL);
 }
 
 unsigned int _stdcall CMonsterManager::MonsterManagerThreadFunc(void* _pArgs)
@@ -41,7 +42,7 @@ bool CMonsterManager::Init(const char* _fileName)
 {
 	FILE* file;
 
-	errno_t error = fopen_s(&file, _fileName, "rb");
+	errno_t error = fopen_s(&file, _fileName, "rb"); // c++함수로 교체
 
 	if (error != 0) return false;
 
@@ -61,7 +62,18 @@ bool CMonsterManager::Init(const char* _fileName)
 	for (int i = static_cast<int>(m_monsterList.size()); i < size; i++)
 	{
 		fread(&vector3, sizeof(VECTOR3), 1, file);
-		m_monsterList.push_back(new CMonster(vector3, rangeMin, rangeMax, type, i));
+		CMonster* pMonster;
+
+		if (type == 1)
+		{
+			pMonster = new CBigSlimeLeaf(vector3, rangeMin, rangeMax, type, i);
+		}
+		else
+		{
+			pMonster = new CMonster(vector3, rangeMin, rangeMax, type, i);
+		}
+		m_monsterList.push_back(pMonster);
+		//m_monsterList.push_back(new CMonster(vector3, rangeMin, rangeMax, type, i));
 	}
 
 	fclose(file);
@@ -69,12 +81,14 @@ bool CMonsterManager::Init(const char* _fileName)
 	return true;
 }
 
-void CMonsterManager::CreateMonster()
+void CMonsterManager::Hit(CUser* _pTarget, int _index)
 {
-	for (CMonster* m : m_monsterList)
-	{
-		m->SendPacketCreate();
-	}
+	m_monsterList[_index]->Hit(_pTarget);
+}
+
+HANDLE CMonsterManager::GetHandle()
+{
+	return m_thread;
 }
 
 void CMonsterManager::RunLoop()
@@ -87,7 +101,7 @@ void CMonsterManager::RunLoop()
 
 	while (true)
 	{
-		Sleep(100);
+		Sleep(200);
 
 		nowTick = ::timeGetTime();
 
@@ -97,17 +111,7 @@ void CMonsterManager::RunLoop()
 
 		for (CMonster* m : m_monsterList)
 		{
-			m->Move(deltaTick * static_cast<float>(0.001));
-		}
-
-		for (CMonster* m : m_monsterList)
-		{
-			if (!m->CheckMovement()) continue;
-
-			if (m->SetNextDestination(walkable))
-			{
-				m->SendPacketMove();
-			}
+			m->Update(deltaTick * 0.001f); // 확인해야 한다
 		}
 	}
 }

@@ -1,8 +1,6 @@
 #pragma once
 #include "Monster.h"
 
-class CMap;
-
 class CMonsterManager
 {
 public:
@@ -20,7 +18,7 @@ private:
 
 private:
 	monsterList_t	m_monsterList;
-	//CMap*			m_pMap;
+	HANDLE m_thread;
 public:
 	void Start();
 	void RunLoop();
@@ -28,6 +26,6 @@ public:
 	static unsigned int _stdcall MonsterManagerThreadFunc(void* _pArgs);
 
 	bool Init(const char* _fileName);
-	void CreateMonster();
-	//void SetMap(CMap* _pMap);
+	void Hit(CUser* _pTarget, int _index);
+	HANDLE GetHandle();
 };

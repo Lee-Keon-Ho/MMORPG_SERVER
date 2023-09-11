@@ -1,5 +1,6 @@
 #pragma once
 #include "User.h"
+#include "../NetCore/Lock.h"
 #include "PacketStruct.h"
 #include "PacketType.h"
 #include "Monster.h"
@@ -9,12 +10,14 @@
 #define SECTOR_SIZE 18
 #define SECTOR_LINE 15
 
+using namespace std;
+
 class CSector
 {
 private:
-	typedef std::map<SOCKET, CUser*> userMap_t;
-	typedef std::vector<CSector*> sector_t;
-	typedef std::map<int, CMonster*> monster_t;
+	typedef map<SOCKET, CUser*> userMap_t;
+	typedef vector<CSector*> sector_t;
+	typedef map<int, CMonster*> monster_t;
 private:
 	userMap_t m_userList;
 	monster_t m_monsterList;
@@ -31,9 +34,11 @@ public:
 	~CSector();
 
 	void SetAdjacentSector(CSector* _pSector);
-	std::vector<CSector*> Difference(sector_t _b);
+	vector<CSector*> Difference(sector_t _b);
 	void DeleteUsersOutOfSector(CUser& _user);
 	void FetchUserInfoInNewSector(CUser& _user);
+	void DeleteMonstersOutOfSector(CUser& _user);
+	void FetchMonsgerInfoInNewSector(CUser& _user);
 
 	void Add(CUser* _user);
 	void Add(CMonster* _pMonster);
@@ -44,8 +49,10 @@ public:
 	
 	int Size();
 	int GetSectorUserCount();
-	std::map<SOCKET, CUser*> GetMap();
-	std::map<SOCKET, CUser*> GetAdjacentGetMap(int _index);
-	std::vector<CSector*> GetAdjacentSector();
+	map<SOCKET, CUser*> GetMap();
+	map<SOCKET, CUser*> GetAdjacentGetMap(int _index);
+	vector<CSector*> GetAdjacentSector();
 	int GetAdjacentUserCount(int _index);
+	void SendMonsterInfo(CUser* _pUser);
+	void SendAdjacentSectorMonsterInfo(CUser* _pUser);
 };

@@ -19,9 +19,10 @@ CAStar::~CAStar()
 	if (m_pOpenList != nullptr) { delete m_pOpenList; m_pOpenList = nullptr; }
 }
 
-std::vector<VECTOR3> CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
+std::vector<VECTOR3> CAStar::Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap)
 {
 	PriorityQueue priorityQueue;
+	vector<VECTOR3> path;
 	CNode startNode(static_cast<unsigned int>(_start.x), static_cast<unsigned int>(_start.z));
 	CNode goalNode(static_cast<unsigned int>(_goal.x), static_cast<unsigned int>(_goal.z));
 	CNode current;
@@ -29,8 +30,6 @@ std::vector<VECTOR3> CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 	unsigned int nextX = 0;
 	unsigned int nextY = 0;
 	int priority = 0;
-
-	bool loop = true;
 
 	for (CNode* node : m_tileGrid)
 	{
@@ -81,7 +80,6 @@ std::vector<VECTOR3> CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 					// 0 = x, 1 = y, 2 = xy
 					int va = -1;
 
-					vector<VECTOR3> path;
 					VECTOR3 vector({ 0,0,0 });
 					VECTOR3 endVector = *(temp.end() - 1);
 					for (VECTOR3 v : temp) // begin은 무조건 들어간다
@@ -119,8 +117,6 @@ std::vector<VECTOR3> CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 						vector = v;
 					}
 
-					loop = false;
-
 					m_openList.clear();
 					m_closeList.clear();
 
@@ -134,6 +130,7 @@ std::vector<VECTOR3> CAStar::Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap)
 		}
 	}
 
+	return path;
 	/////////////////////////////////////////////
 
 	/*m_pOpenList->Insert(startNode);

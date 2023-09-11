@@ -13,7 +13,7 @@ CNavigation::~CNavigation()
 	if (m_pAStar != nullptr) { delete m_pAStar; m_pAStar = nullptr; }
 }
 
-std::vector<VECTOR3> CNavigation::FindPath(VECTOR3 _start, VECTOR3 _goal)
+std::vector<VECTOR3> CNavigation::FindPath(VECTOR3& _start, VECTOR3& _goal)
 {
 	return m_pAStar->Find(_start, _goal, m_pMapGrid->GetWalkable());
 }

@@ -32,6 +32,6 @@ public:
 	CAStar();
 	~CAStar();
 
-	std::vector<VECTOR3> Find(VECTOR3 _start, VECTOR3 _goal, bool* _pMap);
+	std::vector<VECTOR3> Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap);
 	bool SearchNode(node_t _vector, CNode _node);
 };

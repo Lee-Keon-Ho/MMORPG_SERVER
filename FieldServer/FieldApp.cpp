@@ -1,14 +1,18 @@
 #include "FieldApp.h"
-#include "../NetCore/IOCP.h"
-#include "../NetCore/workerThread.h"
 #include "UserManager.h"
 #include "MonsterManager.h"
 #include "Navigation.h"
-#include "User.h"
+#include "Notice.h"
 #include "FieldManager.h"
 #include <stdio.h>
 
+#ifdef _DEBUG
 #pragma comment (lib, "./../x64/Debug/NetCore.lib")
+#else
+#pragma comment (lib, "./../x64/Release/NetCore.lib")
+#endif
+
+#pragma comment (lib, "winmm.lib")
 
 CFieldApp::CFieldApp() : m_pThreadManager(nullptr), m_pFieldAcceptor(nullptr)
 {
@@ -36,10 +40,14 @@ bool CFieldApp::CreateInstance()
 	CUserManager::GetInstance();
 	CMonsterManager::GetInstance();
 	CNavigation::GetInstance();
-	//if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("183.108.148.202", 30002);
-	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("183.108.148.83", 30002);
+	CNotice::GetInstance();
+
+//	if (!m_pLoginConnector) m_pLoginConn = new CLoginconnector("192.168.1.183", 40001);
+
+	// file에서 받아온다 원래는 이렇게 사용하지 않는다.
+	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("112.184.241.183", 30002);
 	if (!m_pFieldAcceptor) return false;
-	if (m_pThreadManager == nullptr) m_pThreadManager = new CThreadManager();
+	if (!m_pThreadManager) m_pThreadManager = new CThreadManager();
 	if (!m_pThreadManager) return false;
 
 	return true;
@@ -51,8 +59,8 @@ bool CFieldApp::StartInstance()
 	GetSystemInfo(&si);
 
 	if (!m_pThreadManager->Start(si.dwNumberOfProcessors * 2)) return false;
-
-	CMonsterManager::GetInstance()->Start(); // 2023-05-31 test
+	CNotice::GetInstance()->Start();
+	CMonsterManager::GetInstance()->Start();
 
 	printf("server start...\n");
 	return true;
@@ -60,6 +68,8 @@ bool CFieldApp::StartInstance()
 
 void CFieldApp::RunLoop()
 {
+	// 생각하고 수정을 해야한다. 방향성
+	//WaitForSingleObject(CMonsterManager::GetInstance()->GetHandle(), INFINITE);
 	while (true)
 	{
 		Sleep(1);

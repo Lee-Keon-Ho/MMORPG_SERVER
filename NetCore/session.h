@@ -1,8 +1,8 @@
 #pragma once
 #include <WinSock2.h>
-#include "RingBuffer.h"
 
 class CSession;
+class CRingBuffer;
 
 struct overlapped_ex : WSAOVERLAPPED
 {

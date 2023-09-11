@@ -1,17 +1,55 @@
 #include "User.h"
+#include "../NetCore/RingBuffer.h"
 #include "PacketHandler.h"
 #include "FieldManager.h"
 #include "UserManager.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NAME_MAX 9
+#define NAME_MAX 8
 
-CUser::CUser() : m_position({ 0,0,0 }), m_endPosition({ 0,0,0 })
+CUser::CUser() :
+	m_position({ 0.0f,0.0f,0.0f }),
+	m_endPosition({ 0.0f,0.0f,0.0f }),
+	m_rotationY(0.0f),
+	m_index(0),
+	m_state(0),
+	m_prevSector(0),
+	m_currentSector(0),
+	m_name(nullptr),
+	m_character(0),
+	m_curHp(0),
+	m_maxHp(0),
+	m_damageMin(0),
+	m_damageMax(0),
+	m_level(0),
+	m_pMap(nullptr),
+	m_pSector(nullptr),
+	m_curExp(0.0f),
+	m_maxExp(0.0f)
 {
 }
 
-CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : CSession(_socketInfo), m_position({ 0,0,0 }), m_endPosition({ 0,0,0 })
+CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : 
+	CSession(_socketInfo), 
+	m_position({ 0.0f,0.0f,0.0f }), 
+	m_endPosition({ 0.0f,0.0f,0.0f }),
+	m_rotationY(0.0f),
+	m_index(0),
+	m_state(0),
+	m_prevSector(0),
+	m_currentSector(0),
+	m_name(nullptr),
+	m_character(0),
+	m_curHp(100),
+	m_maxHp(100),
+	m_damageMin(3),
+	m_damageMax(5),
+	m_level(1),
+	m_pMap(nullptr),
+	m_pSector(nullptr),
+	m_curExp(0),
+	m_maxExp(20)
 {
 	m_name = new char[NAME_MAX];
 	memset(m_name, 0, NAME_MAX);
@@ -38,12 +76,32 @@ int CUser::PacketHandle()
 	return 0;
 }
 
-void CUser::SetPosition(VECTOR3 _position)
+void CUser::AddExp(int _exp)
+{
+	float exp = m_curExp + _exp;
+
+	if (exp >= m_maxExp)
+	{
+		m_level++;
+		m_curExp = exp - m_maxExp;
+		m_maxExp = m_maxExp + m_level;
+		m_curHp = 100;
+		// max Hp Mp 처리 추가
+		SendPacket_LevelUp();
+	}
+	else
+	{
+		m_curExp += _exp;
+		SendPacket_EXP();
+	}
+}
+
+void CUser::SetPosition(VECTOR3& _position)
 {
 	m_position = _position;
 }
 
-void CUser::SetEndPosition(VECTOR3 _EndPosition)
+void CUser::SetEndPosition(VECTOR3& _EndPosition)
 {
 	m_endPosition = _EndPosition;
 }
@@ -71,11 +129,11 @@ float CUser::GetRotationY()
 void CUser::SetIndex(int _index)
 {
 	m_index = _index;
-	memcpy(m_name, "User0000", sizeof("User0000"));
-	m_name[4] = '0' + _index / 1000;
-	m_name[5] = '0' + (_index % 1000) / 100;
-	m_name[6] = '0' + (_index % 10) / 10;
-	m_name[7] = '0' + _index % 10;
+
+	m_name[0] = 'P';
+	m_name[2] = '0' + (m_socket_info.socket % 1000) / 100;;
+	m_name[4] = '0' + (m_socket_info.socket % 100) / 10;
+	m_name[6] = '0' + m_socket_info.socket % 10;
 	m_name[8] = '\0';
 	
 	m_character = rand() % 3;
@@ -83,7 +141,7 @@ void CUser::SetIndex(int _index)
 
 void CUser::SetPrevSector()
 {
-	m_prevSector = (static_cast<int>(m_position.x) / SECTOR_SIZE) + (static_cast<int>(m_position.z) / SECTOR_SIZE) * 15;
+	m_prevSector = (static_cast<int>(m_position.x) / SECTOR_SIZE) + (static_cast<int>(m_position.z) / SECTOR_SIZE) * SECTOR_LINE;
 }
 
 void CUser::SetCurrentSector(VECTOR3 _vector)
@@ -91,7 +149,13 @@ void CUser::SetCurrentSector(VECTOR3 _vector)
 	m_currentSector = (static_cast<int>(_vector.x) / SECTOR_SIZE) + (static_cast<int>(_vector.z) / SECTOR_SIZE) * SECTOR_LINE;
 }
 
-void CUser::SetInfo(VECTOR3 _position)
+void CUser::SetInfo(float _rotationY, int _state)
+{
+	m_rotationY = _rotationY;
+	m_state = _state;
+}
+
+void CUser::SetInfo(VECTOR3& _position)
 {
 	m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT); // 나중에 맵정보를 변경하자
 
@@ -103,7 +167,7 @@ void CUser::SetInfo(VECTOR3 _position)
 	m_pMap->Add(this, m_prevSector);
 }
 
-void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, int _state)
+void CUser::SetInfo(VECTOR3& _current, VECTOR3& _end, int _state)
 {
 	m_position = _current;
 	m_endPosition = _end;
@@ -115,7 +179,7 @@ void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, int _state)
 	}
 }
 
-void CUser::SetInfo(VECTOR3 _current, VECTOR3 _end, float _rotationY, int _state)
+void CUser::SetInfo(VECTOR3& _current, VECTOR3& _end, float _rotationY, int _state)
 {
 	m_position = _current;
 	m_endPosition = _end;
@@ -204,7 +268,7 @@ void CUser::SendPacket_Infield()
 
 			*(u_short*)tempBuffer = 6 + (43 * userCount);
 			tempBuffer += sizeof(u_short);
-			*(u_short*)tempBuffer = CS_PT_INFIELD;
+			*(u_short*)tempBuffer = CS_PT_PLYAER_INFIELD;
 			tempBuffer += sizeof(u_short);
 			*(u_short*)tempBuffer = userCount;
 			tempBuffer += sizeof(u_short);
@@ -221,8 +285,8 @@ void CUser::SendPacket_Infield()
 				tempBuffer += sizeof(u_short);
 				*(float*)tempBuffer = pUser->GetRotationY();
 				tempBuffer += sizeof(float);
-				memcpy(tempBuffer, pUser->GetName(), 9);
-				tempBuffer += 9;
+				memcpy(tempBuffer, pUser->GetName(), NAME_MAX);
+				tempBuffer += NAME_MAX;
 				memcpy(tempBuffer, pUser->GetPosition(), sizeof(VECTOR3));
 				tempBuffer += sizeof(VECTOR3);
 				memcpy(tempBuffer, pUser->GetEndPosition(), sizeof(VECTOR3));
@@ -239,7 +303,7 @@ void CUser::SendPacket_Infield()
 
 void CUser::SendPacket_LogIn()
 {
-	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_index, m_character, 9, m_name);
+	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_index, m_character, m_level, NAME_MAX, m_name);
 	printf("%ld %ld\n", m_index, m_socket_info.socket);
 	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEW_LOGIN));
 }
@@ -268,7 +332,7 @@ void CUser::SendPacket_AdjacentSector_NewUserEntry()
 
 void CUser::SendPacket_Move()
 {
-	PACKET_MOVE_USER packet(sizeof(PACKET_MOVE_USER), CS_PT_MOVEUSER, m_index, m_position, m_endPosition);
+	PACKET_MOVE_USER packet(sizeof(PACKET_MOVE_USER), CS_PT_PLYAER_MOVE, m_index, m_position, m_endPosition);
 
 	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
 	//SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
@@ -276,10 +340,80 @@ void CUser::SendPacket_Move()
 
 void CUser::SendPacket_Arrive()
 {
-	PACKET_ARRIVE packet(sizeof(PACKET_ARRIVE), CS_PT_ARRIVE, m_index, m_rotationY, m_position);
+	PACKET_ARRIVE packet(sizeof(PACKET_ARRIVE), CS_PT_PLYAER_ARRIVE, m_index, m_rotationY, m_position);
 
 	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));
 	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));
+}
+
+void CUser::SendPacket_Idle_Attack()
+{
+	PACKET_IDLE_ATTACK packet(sizeof(PACKET_IDLE_ATTACK), CS_PT_IDLE_PLAYER_ATTACK, m_index, m_rotationY);
+
+	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_IDLE_ATTACK));
+}
+
+void CUser::SendPacket_Move_Attack()
+{
+	PACKET_MOVE_ATTACK packet(sizeof(PACKET_MOVE_ATTACK), CS_PT_MOVE_PLAYER_ATTACK, m_index, m_rotationY, m_position);
+
+	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_ATTACK));
+}
+
+void CUser::SendPacket_EXP()
+{
+	float percent = m_curExp / m_maxExp * 100.0f;
+	PACKET_EXP packet(sizeof(PACKET_EXP), CS_PT_EXP, percent);
+
+	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_EXP));
+}
+
+void CUser::SendPacket_LevelUp()
+{
+	PACKET_PLAYER_LEVEL_UP packet(sizeof(PACKET_PLAYER_LEVEL_UP), CS_PT_LEVEL_UP, m_level, m_curExp, m_maxExp);
+
+	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_PLAYER_LEVEL_UP));
+}
+
+void CUser::SendPacket_Hit(int _damage)
+{
+	m_curHp -= _damage;
+
+	if (m_curHp <= 0)
+	{
+
+	}
+	else
+	{
+		PACKET_PLAYER_HIT packet(sizeof(PACKET_PLAYER_HIT), CS_PT_PLAYER_HIT, m_curHp);
+
+		Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_PLAYER_HIT));
+	}
+}
+
+void CUser::SendPacket_Chatting(char* _str, int _chatLen)
+{
+	char sendBuffer[100];
+	char* tempBuffer = sendBuffer;
+	*(u_short*)tempBuffer = 8 + NAME_MAX + _chatLen;
+	tempBuffer += sizeof(u_short);
+	*(u_short*)tempBuffer = CS_PT_PLAYER_CHATTING;
+	tempBuffer += sizeof(u_short);
+	*(u_short*)tempBuffer = NAME_MAX;
+	tempBuffer += sizeof(u_short);
+	memcpy(tempBuffer, m_name, NAME_MAX);
+	tempBuffer += NAME_MAX;
+	*(u_short*)tempBuffer = _chatLen;
+	tempBuffer += sizeof(u_short);
+	memcpy(tempBuffer, _str, _chatLen);
+	tempBuffer += _chatLen;
+
+	m_pSector->SendAll(sendBuffer, tempBuffer - sendBuffer);
+}
+
+void CUser::SendPacket_MonsterInfo()
+{
+	m_pSector->SendAdjacentSectorMonsterInfo(this);
 }
 
 const char* CUser::GetName()
@@ -290,4 +424,10 @@ const char* CUser::GetName()
 int CUser::GetCharacter()
 {
 	return m_character;
+}
+
+int CUser::GetDamage()
+{
+	int damage = Random(m_damageMax, m_damageMin);
+	return damage;
 }

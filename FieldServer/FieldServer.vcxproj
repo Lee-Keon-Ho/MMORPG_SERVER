@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="AStar.cpp" />
+    <ClCompile Include="CBigSlimeLeaf.cpp" />
     <ClCompile Include="FieldManager.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="MapGrid.cpp" />
@@ -152,6 +153,8 @@
     <ClCompile Include="MonsterManager.cpp" />
     <ClCompile Include="Navigation.cpp" />
     <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Notice.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="PriorityQueue.cpp" />
     <ClCompile Include="QuadTree.cpp" />
     <ClCompile Include="Sector.cpp" />
@@ -165,6 +168,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="AStar.h" />
+    <ClInclude Include="CBigSlimeLeaf.h" />
     <ClInclude Include="FieldManager.h" />
     <ClInclude Include="Navigation.h" />
     <ClInclude Include="Map.h" />
@@ -172,6 +176,8 @@
     <ClInclude Include="Monster.h" />
     <ClInclude Include="MonsterManager.h" />
     <ClInclude Include="Node.h" />
+    <ClInclude Include="Notice.h" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="PacketStruct.h" />
     <ClInclude Include="PacketType.h" />
     <ClInclude Include="PriorityQueue.h" />

@@ -1,17 +1,20 @@
 #pragma once
+#include <Windows.h>
 
 class CRingBuffer
 {
 private:
-	int m_size;
+	int		m_size;
 
-	char* m_buffer;
-	char* m_tempBuffer;
-	char* m_pRead;
-	char* m_pWrite;
-	char* m_pBufferEnd;
+	char*	m_buffer;
+	char*	m_tempBuffer;
+	char*	m_pRead;
+	char*	m_pWrite;
+	char*	m_pBufferEnd;
 
-	int m_remainDataSize;
+	int		m_remainDataSize;
+
+	CRITICAL_SECTION m_cs;
 public:
 	CRingBuffer(int _bufferSize = 65530);
 	virtual ~CRingBuffer();
@@ -24,19 +27,19 @@ public:
 
 	void Read(int _size);
 
-	bool IsFull() { return (m_remainDataSize >= m_size); }
+	bool IsFull();
 
-	char* GetBuffer() { return m_buffer; }
+	char* GetBuffer();
 
-	int GetRemainDataSize() { return m_remainDataSize; }
+	int GetRemainDataSize();
 
-	char* GetEndBufferAddr() { return m_pBufferEnd; }
+	char* GetEndBufferAddr();
 
-	char* GetWriteBuffer() { return m_pWrite; }
+	char* GetWriteBuffer();
 
-	char* GetReadBuffer() { return m_pRead; }
+	char* GetReadBuffer();
 
-	int GetRemainSize_EndBuffer(const char* _pBuffer) { return (int)(m_pBufferEnd - _pBuffer); }
+	int GetRemainSize_EndBuffer(const char* _pBuffer);
 
 	char* GetPacketBuffer();
 };

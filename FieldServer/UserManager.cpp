@@ -84,7 +84,7 @@ void CUserManager::SendUserCount(CUser& _user)
 
 	*(u_short*)tempBuffer = 8;
 	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = 12;
+	*(u_short*)tempBuffer = 99;
 	tempBuffer += sizeof(u_short);
 	*(u_short*)tempBuffer = GetUserCount();
 	tempBuffer += sizeof(u_short);
