@@ -4,7 +4,9 @@
 enum eField
 {
 	FOREST_TOWN = 0,
-	FOREST_HUNT
+	FOREST_HUNT,
+	WINTER_HUNT,
+	MAX
 };
 
 class CFieldManager
@@ -21,7 +23,7 @@ private:
 	~CFieldManager();
 
 private:
-	CMap* m_pMap; // 나중에 이름 변경 ForestMap 사냥터
+	CMap* m_pMap[MAX]; // 나중에 이름 변경 ForestMap 사냥터
 
 public:
 	CMap* GetMap(int _index);

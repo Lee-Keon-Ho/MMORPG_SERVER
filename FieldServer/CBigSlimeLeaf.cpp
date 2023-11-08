@@ -1,6 +1,7 @@
 #include "CBigSlimeLeaf.h"
 #include "Sector.h"
 #include "FieldManager.h"
+#include "Navigation.h"
 
 #define DISTANCE 100.0f
 
@@ -18,36 +19,36 @@ CBigSlimeLeaf::~CBigSlimeLeaf()
 {
 }
 
-void CBigSlimeLeaf::Update(float _deltaTick)
+void CBigSlimeLeaf::Update(float _deltaTick, CNavigation* _pNavi)
 {
 	switch (m_state)
 	{
 	case IDLE:
-		Idle(_deltaTick); // _deltaTick
+		Idle(_deltaTick, _pNavi); // _deltaTick
 		break;
 	case RUN:
-		Run(_deltaTick);
+		Run(_deltaTick, _pNavi);
 		break;
 	case HIT:
-		Hit(_deltaTick);
+		Hit(_deltaTick, _pNavi);
 		break;
 	case TARGET_RUN:
-		TargetRun(_deltaTick);
+		TargetRun(_deltaTick, _pNavi);
 		break;
 	case ATTACK:
-		Attack(_deltaTick);
+		Attack(_deltaTick, _pNavi);
 		break;
 	case DIE:
-		Die(_deltaTick);
+		Die(_deltaTick, _pNavi);
 		break;
 	}
 }
 
-void CBigSlimeLeaf::Idle(float _deltaTick)
+void CBigSlimeLeaf::Idle(float _deltaTick, CNavigation* _pNavi)
 {
 	if (m_target == nullptr)
 	{
-		CheckMonsterInRange();
+		CheckMonsterInRange(_pNavi);
 	}
 	else if (m_target != nullptr)
 	{
@@ -55,26 +56,29 @@ void CBigSlimeLeaf::Idle(float _deltaTick)
 		m_attackTick += _deltaTick;
 		if (m_attackTick >= 2.0f) m_attackTick = 0.0f;
 	}
-	else if(Random(100, 0) == 0)
+	if (m_target == nullptr)
 	{
-		SetNextDestination();
+		if (Random(100, 0) == 0)
+		{
+			SetNextDestination(_pNavi);
+		}
 	}
 }
 
-void CBigSlimeLeaf::TargetRun(float _deltaTick)
+void CBigSlimeLeaf::TargetRun(float _deltaTick, CNavigation* _pNavi)
 {
 	if (Distance(m_currentPosition, m_firstHitPosition) >= 40.0f)
 	{
-		m_path = CNavigation::GetInstance()->FindPath(m_currentPosition, m_firstHitPosition);
+		_pNavi->Add(m_currentPosition, m_firstHitPosition, &m_path, m_pMap->GetMapGrid()->GetWalkable());
 
-		if (m_path.size() > 1)
-		{
-			m_destinationPosition = m_firstHitPosition;
-			m_target = nullptr;
-			m_state = RUN;
-			m_pathIndex = 1;
-			SendPacketMove();
-		}
+		//if (m_path.size() > 0)
+		//{
+		//	m_destinationPosition = m_firstHitPosition;
+		//	m_target = nullptr;
+		//	m_state = RUN;
+		//	m_pathIndex = 1;
+		//	SendPacketMove();
+		//}
 		return;
 	}
 
@@ -86,6 +90,7 @@ void CBigSlimeLeaf::TargetRun(float _deltaTick)
 		return;
 	}
 
+	if (m_path.size() == 0) return;
 	float distance = Distance(m_path[m_pathIndex], m_currentPosition);
 	int sector;
 
@@ -112,7 +117,7 @@ void CBigSlimeLeaf::TargetRun(float _deltaTick)
 
 		if (m_pathIndex >= m_path.size())
 		{
-			TarGetDestination();
+			TarGetDestination(_pNavi);
 			m_pathIndex = 0;
 		}
 		else
@@ -123,11 +128,12 @@ void CBigSlimeLeaf::TargetRun(float _deltaTick)
 	}
 }
 
-void CBigSlimeLeaf::CheckMonsterInRange()
+void CBigSlimeLeaf::CheckMonsterInRange(CNavigation* _pNavi)
 {
 	for (int i = 0; i < 9; i++)
 	{
 		std::map<SOCKET, CUser*> userList = m_pSector->GetAdjacentGetMap(i);
+		CMap* map = CFieldManager::GetInstance()->GetMap(0);
 
 		for (auto user : userList)
 		{
@@ -135,8 +141,7 @@ void CBigSlimeLeaf::CheckMonsterInRange()
 			{
 				m_firstHitPosition = m_currentPosition;
 				m_target = user.second;
-				TarGetDestination();
-				m_state = TARGET_RUN;
+				TarGetDestination(_pNavi);
 				return;
 			}
 		}

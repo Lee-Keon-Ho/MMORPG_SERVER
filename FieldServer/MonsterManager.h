@@ -1,5 +1,7 @@
 #pragma once
-#include "Monster.h"
+#include "Navigation.h"
+
+class CMonster;
 
 class CMonsterManager
 {
@@ -10,7 +12,7 @@ public:
 		return &instance;
 	}
 
-	typedef std::vector<CMonster*> monsterList_t;
+	typedef std::vector<CMonster*> monsterList_t; // using으로 작업하고
 
 private:
 	CMonsterManager();
@@ -18,7 +20,8 @@ private:
 
 private:
 	monsterList_t	m_monsterList;
-	HANDLE m_thread;
+	CNavigation*	m_pNavigation;
+	HANDLE			m_thread;
 public:
 	void Start();
 	void RunLoop();

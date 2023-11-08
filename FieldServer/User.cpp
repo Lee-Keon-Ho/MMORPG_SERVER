@@ -1,3 +1,4 @@
+
 #include "User.h"
 #include "../NetCore/RingBuffer.h"
 #include "PacketHandler.h"
@@ -6,54 +7,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NAME_MAX 8
+#define NAME_MAX 32
 
 CUser::CUser() :
-	m_position({ 0.0f,0.0f,0.0f }),
 	m_endPosition({ 0.0f,0.0f,0.0f }),
 	m_rotationY(0.0f),
 	m_index(0),
 	m_state(0),
 	m_prevSector(0),
 	m_currentSector(0),
-	m_name(nullptr),
-	m_character(0),
-	m_curHp(0),
-	m_maxHp(0),
-	m_damageMin(0),
-	m_damageMax(0),
-	m_level(0),
+	m_field(0),
 	m_pMap(nullptr),
 	m_pSector(nullptr),
-	m_curExp(0.0f),
 	m_maxExp(0.0f)
 {
 }
 
-CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) : 
-	CSession(_socketInfo), 
-	m_position({ 0.0f,0.0f,0.0f }), 
+CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) :
+	CSession(_socketInfo),
 	m_endPosition({ 0.0f,0.0f,0.0f }),
+	m_characterInfo(),
 	m_rotationY(0.0f),
 	m_index(0),
 	m_state(0),
 	m_prevSector(0),
 	m_currentSector(0),
-	m_name(nullptr),
-	m_character(0),
-	m_curHp(100),
-	m_maxHp(100),
-	m_damageMin(3),
-	m_damageMax(5),
-	m_level(1),
+	m_field(0),
 	m_pMap(nullptr),
 	m_pSector(nullptr),
-	m_curExp(0),
 	m_maxExp(20)
 {
-	m_name = new char[NAME_MAX];
-	memset(m_name, 0, NAME_MAX);
-	send(m_socket_info.socket, m_name, 4, 0);
+	char buffer[4] = { 0, };
+	Send(buffer, sizeof(buffer));
+}
+
+CUser::CUser(sCharacterInfo& _info) : m_characterInfo(_info), m_endPosition({ 0.0f,0.0f,0.0f })
+{
 }
 
 CUser::~CUser()
@@ -72,33 +61,35 @@ int CUser::PacketHandle()
 		m_ringBuffer->Read(readSize);
 		return readSize;
 	}
-	
+
 	return 0;
 }
 
 void CUser::AddExp(int _exp)
 {
-	float exp = m_curExp + _exp;
+	float exp = m_characterInfo.curExp + _exp;
 
 	if (exp >= m_maxExp)
 	{
-		m_level++;
-		m_curExp = exp - m_maxExp;
-		m_maxExp = m_maxExp + m_level;
-		m_curHp = 100;
+		m_characterInfo.level++;
+		m_characterInfo.curExp = exp - m_maxExp;
+		m_maxExp = m_maxExp + m_characterInfo.level;
+		m_characterInfo.curHp = 100;
+		m_characterInfo.damageMax++;
+		m_characterInfo.damageMin++;
 		// max Hp Mp 처리 추가
 		SendPacket_LevelUp();
 	}
 	else
 	{
-		m_curExp += _exp;
+		m_characterInfo.curExp += _exp;
 		SendPacket_EXP();
 	}
 }
 
 void CUser::SetPosition(VECTOR3& _position)
 {
-	m_position = _position;
+	m_characterInfo.position = _position;
 }
 
 void CUser::SetEndPosition(VECTOR3& _EndPosition)
@@ -113,7 +104,7 @@ void CUser::SetRotationY(float _rotationY)
 
 VECTOR3* CUser::GetPosition()
 {
-	return &m_position;
+	return &m_characterInfo.position;
 }
 
 VECTOR3* CUser::GetEndPosition()
@@ -129,24 +120,27 @@ float CUser::GetRotationY()
 void CUser::SetIndex(int _index)
 {
 	m_index = _index;
-
-	m_name[0] = 'P';
-	m_name[2] = '0' + (m_socket_info.socket % 1000) / 100;;
-	m_name[4] = '0' + (m_socket_info.socket % 100) / 10;
-	m_name[6] = '0' + m_socket_info.socket % 10;
-	m_name[8] = '\0';
-	
-	m_character = rand() % 3;
 }
 
 void CUser::SetPrevSector()
 {
-	m_prevSector = (static_cast<int>(m_position.x) / SECTOR_SIZE) + (static_cast<int>(m_position.z) / SECTOR_SIZE) * SECTOR_LINE;
+	m_prevSector = (static_cast<int>(m_characterInfo.position.x) / SECTOR_SIZE) + (static_cast<int>(m_characterInfo.position.z) / SECTOR_SIZE) * SECTOR_LINE;
 }
 
-void CUser::SetCurrentSector(VECTOR3 _vector)
+void CUser::SetCurrentSector(VECTOR3& _vector)
 {
 	m_currentSector = (static_cast<int>(_vector.x) / SECTOR_SIZE) + (static_cast<int>(_vector.z) / SECTOR_SIZE) * SECTOR_LINE;
+}
+
+void CUser::SetField(int _field)
+{
+	m_field = _field;
+}
+
+void CUser::SetInfo(sCharacterInfo& _info)
+{
+	m_characterInfo = _info;
+	m_endPosition = _info.position;
 }
 
 void CUser::SetInfo(float _rotationY, int _state)
@@ -157,23 +151,29 @@ void CUser::SetInfo(float _rotationY, int _state)
 
 void CUser::SetInfo(VECTOR3& _position)
 {
-	m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT); // 나중에 맵정보를 변경하자
+	if (m_pMap != nullptr)
+	{
+		m_pSector->WrapUser(*this);
+		m_pSector->Del(this);
+	}
 
-	m_position = _position;
+	m_pMap = CFieldManager::GetInstance()->GetMap(m_field); // 나중에 맵정보를 변경하자
+
+	m_characterInfo.position = _position;
 	m_endPosition = _position;
 	m_prevSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
 	m_currentSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
 	m_pSector = m_pMap->GetSector(m_prevSector);
-	m_pMap->Add(this, m_prevSector);
+	m_pSector->Add(this);
 }
 
 void CUser::SetInfo(VECTOR3& _current, VECTOR3& _end, int _state)
 {
-	m_position = _current;
+	m_characterInfo.position = _current;
 	m_endPosition = _end;
 	m_state = _state;
 
-	if ((static_cast<int>(m_position.x) / SECTOR_SIZE) + (static_cast<int>(m_position.z) / SECTOR_SIZE) * SECTOR_LINE != m_prevSector)
+	if ((static_cast<int>(m_characterInfo.position.x) / SECTOR_SIZE) + (static_cast<int>(m_characterInfo.position.z) / SECTOR_SIZE) * SECTOR_LINE != m_prevSector)
 	{
 		CheckSectorUpdates();
 	}
@@ -181,7 +181,7 @@ void CUser::SetInfo(VECTOR3& _current, VECTOR3& _end, int _state)
 
 void CUser::SetInfo(VECTOR3& _current, VECTOR3& _end, float _rotationY, int _state)
 {
-	m_position = _current;
+	m_characterInfo.position = _current;
 	m_endPosition = _end;
 	m_rotationY = _rotationY;
 	m_state = _state;
@@ -231,7 +231,7 @@ void CUser::CheckSectorUpdates()
 }
 
 int CUser::GetUserCountInSector()
-{	
+{
 	return m_pSector->GetSectorUserCount();
 }
 
@@ -249,7 +249,7 @@ void CUser::SendPacket_Infield()
 	int count = 0;
 
 	std::vector<CSector*> adjacentSecotor = m_pSector->GetAdjacentSector();
-	
+
 	for (int i = 0; i < adjacentSecotor.size(); i++)
 	{
 		std::map<SOCKET, CUser*> userList_t = adjacentSecotor[i]->GetMap();
@@ -266,7 +266,7 @@ void CUser::SendPacket_Infield()
 
 			tempBuffer = sendBuffer;
 
-			*(u_short*)tempBuffer = 6 + (43 * userCount);
+			*(u_short*)tempBuffer = 6 + (67 * userCount);
 			tempBuffer += sizeof(u_short);
 			*(u_short*)tempBuffer = CS_PT_PLYAER_INFIELD;
 			tempBuffer += sizeof(u_short);
@@ -303,14 +303,21 @@ void CUser::SendPacket_Infield()
 
 void CUser::SendPacket_LogIn()
 {
-	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_index, m_character, m_level, NAME_MAX, m_name);
+	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_index, m_characterInfo);
 	printf("%ld %ld\n", m_index, m_socket_info.socket);
 	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEW_LOGIN));
 }
 
+void CUser::SendPacket_NextField()
+{
+	PACKET_NEXT_FIELD packet(sizeof(PACKET_NEXT_FIELD), CS_PT_NEXT_FIELD, m_characterInfo.position);
+
+	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEXT_FIELD));
+}
+
 void CUser::SendPacket_NewUserEntry()
 {
-	PACKET_NEWUSERENTRY packet(sizeof(PACKET_NEWUSERENTRY), CS_PT_NEWUSERENTRY, m_index, m_character, m_name, m_position);
+	PACKET_NEWUSERENTRY packet(sizeof(PACKET_NEWUSERENTRY), CS_PT_NEWUSERENTRY, m_index, static_cast<u_short>(m_characterInfo.type), m_characterInfo.name, m_characterInfo.position);
 	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEWUSERENTRY));
 
 	SendPacket_AdjacentSector_NewUserEntry();
@@ -332,17 +339,17 @@ void CUser::SendPacket_AdjacentSector_NewUserEntry()
 
 void CUser::SendPacket_Move()
 {
-	PACKET_MOVE_USER packet(sizeof(PACKET_MOVE_USER), CS_PT_PLYAER_MOVE, m_index, m_position, m_endPosition);
+	PACKET_MOVE_USER packet(sizeof(PACKET_MOVE_USER), CS_PT_PLYAER_MOVE, m_index, m_characterInfo.position, m_endPosition);
 
-	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
-	//SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
+	/*CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));*/
+	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
 }
 
 void CUser::SendPacket_Arrive()
 {
-	PACKET_ARRIVE packet(sizeof(PACKET_ARRIVE), CS_PT_PLYAER_ARRIVE, m_index, m_rotationY, m_position);
+	PACKET_ARRIVE packet(sizeof(PACKET_ARRIVE), CS_PT_PLYAER_ARRIVE, m_index, m_rotationY, m_characterInfo.position);
 
-	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));
+	/*CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));*/
 	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));
 }
 
@@ -355,14 +362,14 @@ void CUser::SendPacket_Idle_Attack()
 
 void CUser::SendPacket_Move_Attack()
 {
-	PACKET_MOVE_ATTACK packet(sizeof(PACKET_MOVE_ATTACK), CS_PT_MOVE_PLAYER_ATTACK, m_index, m_rotationY, m_position);
+	PACKET_MOVE_ATTACK packet(sizeof(PACKET_MOVE_ATTACK), CS_PT_MOVE_PLAYER_ATTACK, m_index, m_rotationY, m_characterInfo.position);
 
 	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_ATTACK));
 }
 
 void CUser::SendPacket_EXP()
 {
-	float percent = m_curExp / m_maxExp * 100.0f;
+	float percent = m_characterInfo.curExp / m_maxExp * 100.0f;
 	PACKET_EXP packet(sizeof(PACKET_EXP), CS_PT_EXP, percent);
 
 	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_EXP));
@@ -370,22 +377,22 @@ void CUser::SendPacket_EXP()
 
 void CUser::SendPacket_LevelUp()
 {
-	PACKET_PLAYER_LEVEL_UP packet(sizeof(PACKET_PLAYER_LEVEL_UP), CS_PT_LEVEL_UP, m_level, m_curExp, m_maxExp);
+	PACKET_PLAYER_LEVEL_UP packet(sizeof(PACKET_PLAYER_LEVEL_UP), CS_PT_LEVEL_UP, m_characterInfo.level, m_characterInfo.curExp, m_maxExp);
 
 	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_PLAYER_LEVEL_UP));
 }
 
 void CUser::SendPacket_Hit(int _damage)
 {
-	m_curHp -= _damage;
+	m_characterInfo.curHp -= _damage;
 
-	if (m_curHp <= 0)
+	if (m_characterInfo.curHp <= 0)
 	{
 
 	}
 	else
 	{
-		PACKET_PLAYER_HIT packet(sizeof(PACKET_PLAYER_HIT), CS_PT_PLAYER_HIT, m_curHp);
+		PACKET_PLAYER_HIT packet(sizeof(PACKET_PLAYER_HIT), CS_PT_PLAYER_HIT, m_characterInfo.curHp);
 
 		Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_PLAYER_HIT));
 	}
@@ -395,14 +402,14 @@ void CUser::SendPacket_Chatting(char* _str, int _chatLen)
 {
 	char sendBuffer[100];
 	char* tempBuffer = sendBuffer;
-	*(u_short*)tempBuffer = 8 + NAME_MAX + _chatLen;
+	*(u_short*)tempBuffer = 8 + 32 + _chatLen;
 	tempBuffer += sizeof(u_short);
 	*(u_short*)tempBuffer = CS_PT_PLAYER_CHATTING;
 	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = NAME_MAX;
+	*(u_short*)tempBuffer = 32;
 	tempBuffer += sizeof(u_short);
-	memcpy(tempBuffer, m_name, NAME_MAX);
-	tempBuffer += NAME_MAX;
+	memcpy(tempBuffer, m_characterInfo.name, 32);
+	tempBuffer += 32;
 	*(u_short*)tempBuffer = _chatLen;
 	tempBuffer += sizeof(u_short);
 	memcpy(tempBuffer, _str, _chatLen);
@@ -416,18 +423,28 @@ void CUser::SendPacket_MonsterInfo()
 	m_pSector->SendAdjacentSectorMonsterInfo(this);
 }
 
-const char* CUser::GetName()
+const wchar_t* CUser::GetName()
 {
-	return m_name;
+	return m_characterInfo.name;
 }
 
 int CUser::GetCharacter()
 {
-	return m_character;
+	return m_characterInfo.type;
 }
 
 int CUser::GetDamage()
 {
-	int damage = Random(m_damageMax, m_damageMin);
+	int damage = Random(m_characterInfo.damageMax, m_characterInfo.damageMin);
 	return damage;
+}
+
+int CUser::GetField()
+{
+	return m_field;
+}
+
+sCharacterInfo& CUser::GetCharacterInfo()
+{
+	return m_characterInfo;
 }

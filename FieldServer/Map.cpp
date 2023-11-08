@@ -1,6 +1,6 @@
 #include "Map.h"
 #include "UserManager.h"
-CMap::CMap()
+CMap::CMap() : m_pMapGrid(nullptr)
 {
 	for (int i = 0; i < SECTOR_LINE; i++)
 	{
@@ -21,8 +21,8 @@ CMap::CMap()
 		for (int x = 0; x < SECTOR_LINE; x++)
 		{
 			int index = y * SECTOR_LINE + x;
-			
-			for (int i = 0; i < 9; i++) 
+
+			for (int i = 0; i < 9; i++)
 			{
 				nx = x + dx[i];
 				ny = y + dy[i];
@@ -34,9 +34,44 @@ CMap::CMap()
 	}
 }
 
+CMap::CMap(const char* _fileName) : m_pMapGrid(nullptr)
+{
+	for (int i = 0; i < SECTOR_LINE; i++)
+	{
+		for (int x = 0; x < SECTOR_LINE; x++)
+		{
+			m_sector.push_back(new CSector(x, i));
+		}
+	}
+
+	int dx[] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+	int dy[] = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+
+	int nx;
+	int ny;
+
+	for (int y = 0; y < SECTOR_LINE; y++)
+	{
+		for (int x = 0; x < SECTOR_LINE; x++)
+		{
+			int index = y * SECTOR_LINE + x;
+
+			for (int i = 0; i < 9; i++)
+			{
+				nx = x + dx[i];
+				ny = y + dy[i];
+				if (nx < 0 || nx >= SECTOR_LINE || ny < 0 || ny >= SECTOR_LINE) continue;
+
+				m_sector[index]->SetAdjacentSector(m_sector[ny * SECTOR_LINE + nx]);
+			}
+		}
+	}
+	if (m_pMapGrid == nullptr) m_pMapGrid = new CMapGrid(_fileName);
+}
+
 CMap::~CMap()
 {
-	
+	if (m_pMapGrid != nullptr) { delete m_pMapGrid; m_pMapGrid = nullptr; }
 }
 
 void CMap::Add(CUser* _pUser, int _sector)
@@ -79,7 +114,7 @@ void CMap::InSector(CUser& _user)
 	{
 		pSector->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_INSECTOR));
 		pSector->FetchUserInfoInNewSector(_user);
-		pSector->FetchMonsgerInfoInNewSector(_user);
+		pSector->FetchMonsterInfoInNewSector(_user);
 	}
 }
 
@@ -118,6 +153,11 @@ std::map<SOCKET, CUser*> CMap::GetMap(int _sector) // Get
 int CMap::GetSectorCount(int _sector)
 {
 	return m_sector[_sector]->Size();
+}
+
+CMapGrid* CMap::GetMapGrid()
+{
+	return m_pMapGrid;
 }
 
 CSector* CMap::GetSector(int _index)

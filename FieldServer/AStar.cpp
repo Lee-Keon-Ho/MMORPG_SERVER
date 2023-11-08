@@ -17,12 +17,13 @@ CAStar::CAStar() : m_pOpenList(nullptr)
 CAStar::~CAStar()
 {
 	if (m_pOpenList != nullptr) { delete m_pOpenList; m_pOpenList = nullptr; }
+	if (m_tileGrid.size() > 0) { m_tileGrid.clear(); }
 }
 
-std::vector<VECTOR3> CAStar::Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap)
+Path CAStar::Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap)
 {
 	PriorityQueue priorityQueue;
-	vector<VECTOR3> path;
+	Path path;
 	CNode startNode(static_cast<unsigned int>(_start.x), static_cast<unsigned int>(_start.z));
 	CNode goalNode(static_cast<unsigned int>(_goal.x), static_cast<unsigned int>(_goal.z));
 	CNode current;
@@ -41,6 +42,8 @@ std::vector<VECTOR3> CAStar::Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap)
 
 	while (!priorityQueue.empty())
 	{
+		if (priorityQueue.size() > 100) return path;
+
 		current = priorityQueue.top();
 
 		priorityQueue.pop();
@@ -122,7 +125,7 @@ std::vector<VECTOR3> CAStar::Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap)
 
 					if (path.size() == 0)
 					{
-						printf("hoshdfsd\n");
+						printf("No Find\n");
 					}
 					return path;
 				}

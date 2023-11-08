@@ -15,7 +15,7 @@ struct VECTOR3
 		float dy = y - _vector3.y;
 		float dz = z - _vector3.z;
 
-		return (dx * _vector3.x) + (dy * _vector3.y) + (dz * _vector3.z);
+		return (dx * dx) + (dy * dy) + (dz * dz);
 	}
 };
 

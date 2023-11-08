@@ -1,6 +1,5 @@
 #pragma once
 #include "node.h"
-#include <vector>
 
 using node_t = std::vector<CNode>;
 

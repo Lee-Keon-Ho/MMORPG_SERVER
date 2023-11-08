@@ -12,9 +12,6 @@ public:
 	}
 
 public:
-	typedef void (CPacketHandler::*tFunc)(CUser* _user, char* _buffer);
-	
-	tFunc* m_lpfp;
 
 private:
 	CPacketHandler();
@@ -27,6 +24,7 @@ public:
 	void Latency(CUser* _pUser, char* _buffer);
 	void PT_C2FS_LogIn(CUser* _pUser, char* _buffer);
 	void PT_C2FS_PlayerInField(CUser* _pUser, char* _buffer);
+	void PT_C2FS_NextField(CUser* _pUser, char* _buffer);
 	void PT_C2FS_PlayerNowPosition(CUser* _pUser, char* _buffer);
 	void PT_C2FS_PlayerMove(CUser* _pUser, char* _buffer);
 	void PT_C2FS_PlayerArrive(CUser* _pUser, char* _buffer);
@@ -35,5 +33,10 @@ public:
 	void PT_C2FS_MOVE_PlayerAttack(CUser* _pUser, char* _buffer);
 	void PT_C2FS_TargetMonster(CUser* _pUser, char* _buffer);
 	void PT_C2FS_Chatting(CUser* _pUser, char* _buffer);
+	void PT_C2FS_IDLE_ArcherAttack(CUser* _pUser, char* _buffer);
+	void PT_C2FS_MOVE_ArcherAttack(CUser* _pUser, char* _buffer);
+	void PT_C2FS_HIT_Single_monster(CUser* _pUser, char* _buffer);
 	void GetUserCount(CUser*_pUser);
+
+	void test(CUser* _pUser, char* _buffer);
 };

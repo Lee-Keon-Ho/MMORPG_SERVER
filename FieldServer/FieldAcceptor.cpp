@@ -14,5 +14,4 @@ CFieldAcceptor::~CFieldAcceptor()
 void CFieldAcceptor::Handle(ACCEPT_SOCKET_INFO _socket)
 {
 	CUser* pUser = new CUser(_socket);
-	// Login
 }

@@ -20,7 +20,7 @@ void CNotice::RunLoop()
 {
 	while (true)
 	{
-		Sleep(1000);
+		Sleep(10000);
 		
 		int rand = Random(MAX_ARRAY_SIZE - 1, 0);
 

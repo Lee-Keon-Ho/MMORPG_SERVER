@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 #include <string>
 #include "VECTOR.h"
+#include "struct.h"
 
 #pragma pack( push, 1)
 
@@ -26,18 +27,11 @@ struct PACKET_LATENCY : PACKET
 struct PACKET_NEW_LOGIN : PACKET
 {
 	u_short index;
-	u_short character;
-	u_short level;
-	u_short nameSize;
-	char name[8];
+	sCharacterInfo characterInfo;
 
-	PACKET_NEW_LOGIN() : index(0), character(0), level(0), nameSize(0), name("") {}
-	PACKET_NEW_LOGIN(u_short _size, u_short _type, u_short _index, u_short _character, u_short _level, u_short _nameSize, const char* _name)
-		: PACKET(_size, _type), index(_index) , character(_character), level(_level), nameSize(_nameSize)
-	{
-		memset(name, 0, 8);
-		memcpy(name, _name, 8);
-	}
+	PACKET_NEW_LOGIN() : index(0), characterInfo() {}
+	PACKET_NEW_LOGIN(u_short _size, u_short _type, u_short _index, sCharacterInfo& _info)
+		: PACKET(_size, _type), index(_index) , characterInfo(_info) {}
 };
 
 struct PACKET_LOGIN : PACKET
@@ -53,15 +47,15 @@ struct PACKET_NEWUSERENTRY : PACKET
 {
 	u_short index;
 	u_short character;
-	char name[9];
+	wchar_t name[16];
 	VECTOR3 position;
 
-	PACKET_NEWUSERENTRY() : index(0), character(0), position({0,0,0}), name("") {}
-	PACKET_NEWUSERENTRY(u_short _size, u_short _type, u_short _index, u_short _character, const char* _name, VECTOR3 _position)
+	PACKET_NEWUSERENTRY() : index(0), character(0), position({0,0,0}), name(L"") {}
+	PACKET_NEWUSERENTRY(u_short _size, u_short _type, u_short _index, u_short _character, const wchar_t* _name, VECTOR3 _position)
 		: PACKET(_size, _type), index(_index), character(_character), position(_position)
 	{
-		memset(name, 0, 9);
-		memcpy(name, _name, 9);
+		memset(name, 0, 16);
+		memcpy(name, _name, 16);
 	}
 };
 
@@ -275,5 +269,13 @@ struct PACKET_PLAYER_LEVEL_UP : PACKET
 
 	PACKET_PLAYER_LEVEL_UP() : level(0), curExp(0), maxExp(0) {}
 	PACKET_PLAYER_LEVEL_UP(u_short _size, u_short _type, u_short _level, u_short _curExp, u_short _maxExp) : PACKET(_size, _type), level(_level), curExp(_curExp), maxExp(_maxExp) {}
+};
+
+struct PACKET_NEXT_FIELD : PACKET
+{
+	VECTOR3 position;
+
+	PACKET_NEXT_FIELD() : position({ 0.0f, 0.0f, 0.0f }) {}
+	PACKET_NEXT_FIELD(u_short _size, u_short _type, VECTOR3& _position) : PACKET(_size, _type), position(_position) {}
 };
 #pragma pack( pop )

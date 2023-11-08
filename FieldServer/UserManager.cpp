@@ -1,26 +1,33 @@
 #include "UserManager.h"
 #include "Map.h"
+#include "../NetCore/Lock.h"
 
 CUserManager::CUserManager() : m_userNumber(0), m_pMap(nullptr)
 {
 	InitializeCriticalSection(&m_cs_user);
+	InitializeCriticalSection(&m_cs_loginUser);
 }
 
 CUserManager::~CUserManager()
 {
 	DeleteCriticalSection(&m_cs_user);
+	DeleteCriticalSection(&m_cs_loginUser);
 }
 
 void CUserManager::Add(CUser* _pUser)
 {
-	EnterCriticalSection(&m_cs_user);
+	CLock lock(m_cs_user);
 	m_userList.push_back(_pUser);
-	LeaveCriticalSection(&m_cs_user);
+}
+
+void CUserManager::Add(sCharacterInfo& _info, CUser* _pUser)
+{
+	m_loginUserList.insert(make_pair(_info.name, _pUser));
 }
 
 void CUserManager::Del(CUser* _pUser)
 {
-	EnterCriticalSection(&m_cs_user);
+	CLock lock(m_cs_user);
 	std::list<CUser*>::iterator iter = m_userList.begin();
 	std::list<CUser*>::iterator iterEnd = m_userList.end();
 	CUser* pUser;
@@ -34,7 +41,19 @@ void CUserManager::Del(CUser* _pUser)
 		}
 		else iter++;
 	}
-	LeaveCriticalSection(&m_cs_user);
+}
+
+bool CUserManager::Find(wchar_t* _key, CUser* _pUser)
+{
+	CLock lock(m_cs_loginUser);
+	auto pUser = m_loginUserList.find(_key);
+
+	if (pUser == m_loginUserList.end()) return false;
+
+	_pUser->SetInfo(pUser->second->GetCharacterInfo());
+	m_loginUserList.erase(_key);
+
+	return true;
 }
 
 int CUserManager::AddUserNumber()

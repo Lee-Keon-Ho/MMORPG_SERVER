@@ -8,8 +8,8 @@ private:
 
 public:
 	CMapGrid();
+	CMapGrid(const char* _fileName);
 	~CMapGrid();
 
-	bool Init(const char* _fileName);
 	bool* GetWalkable();
 };

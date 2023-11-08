@@ -1,9 +1,9 @@
 #pragma once
 #include "User.h"
+#include "Monster.h"
 #include "../NetCore/Lock.h"
 #include "PacketStruct.h"
 #include "PacketType.h"
-#include "Monster.h"
 #include <map>
 #include <vector>
 
@@ -35,10 +35,12 @@ public:
 
 	void SetAdjacentSector(CSector* _pSector);
 	vector<CSector*> Difference(sector_t _b);
+	void WrapUser(CUser& _pUser);
+	void WrapDeleteUser(CUser& _pUser);
 	void DeleteUsersOutOfSector(CUser& _user);
 	void FetchUserInfoInNewSector(CUser& _user);
 	void DeleteMonstersOutOfSector(CUser& _user);
-	void FetchMonsgerInfoInNewSector(CUser& _user);
+	void FetchMonsterInfoInNewSector(CUser& _user);
 
 	void Add(CUser* _user);
 	void Add(CMonster* _pMonster);

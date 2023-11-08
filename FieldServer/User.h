@@ -2,6 +2,7 @@
 #include "../NetCore/session.h"
 #include "Object.h"
 #include "PacketStruct.h"
+#include "struct.h"
 #include <string>
 
 class CSector;
@@ -10,27 +11,23 @@ class CMap;
 class CUser : public CSession, public CObject
 {
 private:
-	VECTOR3		m_position;
 	VECTOR3		m_endPosition;
 	float		m_rotationY;
 	int			m_index;
 	int			m_state;
 	int			m_prevSector;
 	int			m_currentSector;
-	char*		m_name;
-	int			m_character; // 나중에 db로 빠질 부분
-	int			m_curHp;
-	int			m_maxHp;
-	int			m_damageMin;
-	int			m_damageMax;
-	int			m_level;
-	float		m_curExp;
+	int			m_field;
 	float		m_maxExp;
+
+	sCharacterInfo m_characterInfo;
+
 	CMap*		m_pMap;
 	CSector*	m_pSector;
 public:
 	CUser();
 	CUser(ACCEPT_SOCKET_INFO _socketInfo);
+	CUser(sCharacterInfo& _info);
 	~CUser();
 
 	int PacketHandle() override;
@@ -40,7 +37,9 @@ public:
 	void SetRotationY(float _rotationY);
 	void SetIndex(int _num);
 	void SetPrevSector();
-	void SetCurrentSector(VECTOR3 _vector);
+	void SetCurrentSector(VECTOR3& _vector);
+	void SetField(int _field);
+	void SetInfo(sCharacterInfo& _info);
 	void SetInfo(float _rotationY, int _state);
 	void SetInfo(VECTOR3& _position);
 	void SetInfo(VECTOR3& _current, VECTOR3& _end, int _state);
@@ -55,15 +54,18 @@ public:
 	int GetPrevSector();
 	int GetNowSector();
 	int GetUserCountInSector();
-	const char* GetName();
+	const wchar_t* GetName();
 	int GetCharacter();
 	int GetDamage();
+	int GetField();
+	sCharacterInfo& GetCharacterInfo();
 
 	void LogOut();
 	void CheckSectorUpdates();
 	void SendSector(char* _buffer, int _size);
 	void SendPacket_Infield();
 	void SendPacket_LogIn();
+	void SendPacket_NextField();
 	void SendPacket_NewUserEntry();
 	void SendPacket_AdjacentSector_NewUserEntry();
 	void SendPacket_Move();

@@ -4,7 +4,7 @@
 #include <utility>
 
 using namespace std;
-
+using Path = std::vector<VECTOR3>;
 #define ARRAY_MAX 3
 
 struct compare
@@ -32,6 +32,6 @@ public:
 	CAStar();
 	~CAStar();
 
-	std::vector<VECTOR3> Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap);
+	Path Find(VECTOR3& _start, VECTOR3& _goal, bool* _pMap);
 	bool SearchNode(node_t _vector, CNode _node);
 };

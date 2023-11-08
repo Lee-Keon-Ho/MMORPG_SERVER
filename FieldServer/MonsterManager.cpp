@@ -1,11 +1,13 @@
+#include "Monster.h"
 #include "UserManager.h"
 #include "MonsterManager.h"
-#include "Navigation.h"
 #include "CBigSlimeLeaf.h"
+#include "FieldManager.h"
 #include <process.h>
 #include <chrono>
 
-CMonsterManager::CMonsterManager() // 전체 몬스터를 관리할 것이냐, 맵의 몬스터만 관리할 것인가
+// 전체 몬스터를 관리할 것이냐, 맵의 몬스터만 관리할 것인가
+CMonsterManager::CMonsterManager() : m_pNavigation(nullptr)
 {
 	Init("ForestMonster1.bin"); // map
 	Init("ForestMonster2.bin");
@@ -18,16 +20,28 @@ CMonsterManager::CMonsterManager() // 전체 몬스터를 관리할 것이냐, 맵의 몬스터만
 	Init("ForestMonster4_2.bin");
 	Init("ForestMonster4_3.bin");
 	Init("ForestMonster4_4.bin");
-	Init("ForestMonster4_5.bin");
+	Init("WinterMonster.bin");
+
+	CFieldManager* FM = CFieldManager::GetInstance();
+
+	if (m_pNavigation == nullptr)
+	{
+		m_pNavigation = new CNavigation();
+		for (int i = 1; i < MAX; i++)
+		{
+			m_pNavigation->SetWalkable(FM->GetMap(i)->GetMapGrid(), i);
+		}
+	}
 }
 
 CMonsterManager::~CMonsterManager()
 {
+	if (m_pNavigation) { delete m_pNavigation; m_pNavigation = nullptr; }
 }
 
 void CMonsterManager::Start()
 {
-
+	m_pNavigation->Start();
 	m_thread = (HANDLE)_beginthreadex(NULL, 0, &CMonsterManager::MonsterManagerThreadFunc, this, 0, NULL);
 }
 
@@ -73,7 +87,6 @@ bool CMonsterManager::Init(const char* _fileName)
 			pMonster = new CMonster(vector3, rangeMin, rangeMax, type, i);
 		}
 		m_monsterList.push_back(pMonster);
-		//m_monsterList.push_back(new CMonster(vector3, rangeMin, rangeMax, type, i));
 	}
 
 	fclose(file);
@@ -96,8 +109,6 @@ void CMonsterManager::RunLoop()
 	DWORD prevTick = ::timeGetTime();
 	DWORD nowTick;
 	DWORD deltaTick;
-	CNavigation* navi = CNavigation::GetInstance();
-	bool* walkable = navi->GetWalkable();
 
 	while (true)
 	{
@@ -111,7 +122,7 @@ void CMonsterManager::RunLoop()
 
 		for (CMonster* m : m_monsterList)
 		{
-			m->Update(deltaTick * 0.001f); // 확인해야 한다
+			m->Update(deltaTick * 0.001f, m_pNavigation); // 확인해야 한다
 		}
 	}
 }

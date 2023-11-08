@@ -147,6 +147,8 @@
     <ClCompile Include="AStar.cpp" />
     <ClCompile Include="CBigSlimeLeaf.cpp" />
     <ClCompile Include="FieldManager.cpp" />
+    <ClCompile Include="Job.cpp" />
+    <ClCompile Include="LoginConnector.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="MapGrid.cpp" />
     <ClCompile Include="Monster.cpp" />
@@ -170,6 +172,8 @@
     <ClInclude Include="AStar.h" />
     <ClInclude Include="CBigSlimeLeaf.h" />
     <ClInclude Include="FieldManager.h" />
+    <ClInclude Include="Job.h" />
+    <ClInclude Include="LoginConnector.h" />
     <ClInclude Include="Navigation.h" />
     <ClInclude Include="Map.h" />
     <ClInclude Include="MapGrid.h" />
@@ -184,6 +188,7 @@
     <ClInclude Include="QuadTree.h" />
     <ClInclude Include="Sector.h" />
     <ClInclude Include="sectorStruct.h" />
+    <ClInclude Include="struct.h" />
     <ClInclude Include="User.h" />
     <ClInclude Include="FieldApp.h" />
     <ClInclude Include="FieldAcceptor.h" />

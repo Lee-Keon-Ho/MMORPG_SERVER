@@ -1,10 +1,16 @@
 #include "TcpListener.h"
 #include <WS2tcpip.h>
-
+#include <stdio.h>
 #pragma comment (lib, "ws2_32.lib")
 
 CTcpListener::CTcpListener(PCSTR _ip, u_short _port)
 {
+	WSADATA wsaData;
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+	{
+		printf("Failed WSAStartup()\n");
+	}
+
 	m_socket = WSASocketW(PF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 
 	m_addr.sin_family = AF_INET;

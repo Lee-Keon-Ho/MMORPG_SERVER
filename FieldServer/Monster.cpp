@@ -1,7 +1,8 @@
-#include <WinSock2.h>
 #include "Monster.h"
+#include "User.h"
 #include "FieldManager.h"
 #include "UserManager.h"
+#include "Navigation.h"
 
 #define DISTANCE 100.0f
 #define REGEN 10.0f
@@ -66,7 +67,20 @@ CMonster::CMonster(VECTOR3 _position, VECTOR2_INT _rangeMin, VECTOR2_INT _rangeM
 	m_count = Random(100, 0);
 	m_currentSector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
 
-	m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT);
+	if (m_type == 5)
+	{
+		m_pMap = CFieldManager::GetInstance()->GetMap(WINTER_HUNT);
+		m_level = 3;
+		m_hp = 20;
+	}
+	else if (m_type == 1)
+	{
+		m_level = 2;
+		m_hp = 15;
+		m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT);
+	}
+	else m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT);
+
 	m_pMap->Add(this, m_currentSector);
 	m_pSector = m_pMap->GetSector(m_currentSector);
 }
@@ -100,7 +114,7 @@ void CMonster::SendPacketMove()
 	m_pSector->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_MONSTER));
 }
 
-void CMonster::Update(float _deltaTick)
+void CMonster::Update(float _deltaTick, CNavigation* _pNavi)
 {
 	//if (_deltaTick > 0.13f) _deltaTick = 0.12f;
 
@@ -114,22 +128,25 @@ void CMonster::Update(float _deltaTick)
 	switch (m_state) 
 	{
 	case IDLE:
-		Idle(_deltaTick); // _deltaTick
+		Idle(_deltaTick, _pNavi); // _deltaTick
 		break;
 	case RUN:
-		Run(_deltaTick);
+		Run(_deltaTick, _pNavi);
 		break;
 	case HIT:
-		Hit(_deltaTick);
+		Hit(_deltaTick, _pNavi);
 		break;
 	case TARGET_RUN:
-		TargetRun(_deltaTick);
+		TargetRun(_deltaTick, _pNavi);
 		break;
 	case ATTACK:
-		Attack(_deltaTick);
+		Attack(_deltaTick, _pNavi);
 		break;
 	case DIE:
-		Die(_deltaTick);
+		Die(_deltaTick, _pNavi);
+		break;
+	case WAIT:
+		Wait();
 		break;
 	}
 }
@@ -144,12 +161,12 @@ void CMonster::Hit(CUser* _pTarget)
 	if (m_hp <= 0)
 	{
 		m_state = DIE;
-
 		PACKET_DIE_MONSTER packetDie(sizeof(PACKET_DIE_MONSTER), CS_PT_DIE_MONSTER, static_cast<u_short>(m_index), static_cast<u_short>(damage));
 
 		m_pSector->SendAll(reinterpret_cast<char*>(&packetDie), sizeof(PACKET_DIE_MONSTER));
 		
 		m_target->AddExp(m_exp);
+		m_target = nullptr;
 	}
 	else
 	{
@@ -159,6 +176,37 @@ void CMonster::Hit(CUser* _pTarget)
 
 		m_pSector->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_HIT_MONSTER));
 	}
+}
+
+void CMonster::Wait()
+{
+	if (m_path.size() == 0) m_state = IDLE;
+
+	if (m_target == nullptr)
+	{
+		if (m_path.size() > 1 && m_path.size() < 100)
+		{
+			m_pathIndex = 1;
+			SetUnitVector();
+			if (Distance(m_path[m_pathIndex], m_currentPosition) >= 0.4f)
+			{
+				m_state = RUN;
+				SendPacketMove();
+			}
+		}
+	}
+	else
+	{
+		if (m_path.size() > 1 && m_path.size() < 100)
+		{
+			m_state = TARGET_RUN;
+			m_pathIndex = 1;
+			SetUnitVector();
+			SendPacketMove();
+		}
+	}
+
+	m_distance = DISTANCE;
 }
 
 int CMonster::GetIndex()
@@ -179,11 +227,16 @@ VECTOR3* CMonster::GetPosition()
 VECTOR3* CMonster::GetDestinationPosition()
 {
 	if (m_state == RUN) return &m_path[m_pathIndex];
-
-	return &m_currentPosition;
+	else if(m_state == IDLE) return &m_currentPosition;
+	else return &m_destinationPosition;
 }
 
-void CMonster::Idle(float _deltaTick)
+Path* CMonster::GetPath()
+{
+	return &m_path;
+}
+
+void CMonster::Idle(float _deltaTick, CNavigation* _pNavi)
 {
 	if (m_target != nullptr)
 	{
@@ -196,14 +249,13 @@ void CMonster::Idle(float _deltaTick)
 	}
 	else if (Random(100, 0) == 0)
 	{
-		SetNextDestination();
+		SetNextDestination(_pNavi);
 	}
 }
 
-void CMonster::Run(float _deltaTick)
+void CMonster::Run(float _deltaTick, CNavigation* _pNavi)
 {
-	//assert(m_isMove);
-
+	if (m_pathIndex == 0) return;
 	float distance = Distance(m_path[m_pathIndex], m_currentPosition);
 	int sector;
 
@@ -244,13 +296,13 @@ void CMonster::Run(float _deltaTick)
 	}
 }
 
-void CMonster::Hit(float _deltaTick)
+void CMonster::Hit(float _deltaTick, CNavigation* _pNavi)
 {
 	m_attackTick = 0.0f;
 	float distance = Distance(*m_target->GetPosition(), m_currentPosition);
 	if (distance > 1.5f)
 	{
-		TarGetDestination();
+		TarGetDestination(_pNavi);
 	}
 	else
 	{
@@ -264,11 +316,11 @@ void CMonster::Hit(float _deltaTick)
 	}
 }
 
-void CMonster::Attack(float _deltaTick)
+void CMonster::Attack(float _deltaTick, CNavigation* _pNavi)
 {
 	if (Distance(*m_target->GetPosition(), m_currentPosition) > 1.5f)
 	{
-		TarGetDestination();
+		TarGetDestination(_pNavi);
 	}
 	else
 	{
@@ -283,7 +335,7 @@ void CMonster::Attack(float _deltaTick)
 	}
 }
 
-void CMonster::Die(float _deltaTick)
+void CMonster::Die(float _deltaTick, CNavigation* _pNavi)
 {
 	m_regen += _deltaTick;
 	if (m_regen >= REGEN)
@@ -297,13 +349,11 @@ void CMonster::Die(float _deltaTick)
 	}
 }
 
-void CMonster::TarGetDestination()
+void CMonster::TarGetDestination(CNavigation* _pNavi)
 {
 	u_int x;
 	u_int z;
 
-	CNavigation* navi = CNavigation::GetInstance();
-	bool* walkable = navi->GetWalkable();
 	VECTOR3 targetPosition = *m_target->GetPosition(); // Distance()를 확인해야한다.
 
 	if (targetPosition.x - m_currentPosition.x < 0) // VECTOR3 로 빼자
@@ -332,37 +382,20 @@ void CMonster::TarGetDestination()
 		z = targetPosition.z + 1.5f;
 	}
 
-	if (walkable[z * 256 + x] != 1) return;
 	m_destinationPosition = targetPosition;
-
-	m_path = navi->FindPath(m_currentPosition, m_destinationPosition);
-
-	if (m_path.size() > 1)
-	{
-		m_state = TARGET_RUN;
-		m_pathIndex = 1;
-		SetUnitVector();
-		SendPacketMove();
-	}
-	else m_pathIndex = 0;
-
-	m_distance = DISTANCE;
+	
+	_pNavi->Add(m_currentPosition, m_destinationPosition, &m_path, m_pMap->GetMapGrid()->GetWalkable());
+	m_state = WAIT;
 }
 
-void CMonster::TargetRun(float _deltaTick)
+void CMonster::TargetRun(float _deltaTick, CNavigation* _pNavi)
 {
 	if (Distance(m_currentPosition, m_firstHitPosition) >= 10.0f)
 	{
-		m_path = CNavigation::GetInstance()->FindPath(m_currentPosition, m_firstHitPosition);
-
-		if (m_path.size() > 1)
-		{
-			m_destinationPosition = m_firstHitPosition;
-			m_target = nullptr;
-			m_state = RUN;
-			m_pathIndex = 1;
-			SendPacketMove();
-		}
+		m_destinationPosition = m_firstHitPosition;
+		m_target = nullptr;
+		_pNavi->Add(m_currentPosition, m_destinationPosition, &m_path, m_pMap->GetMapGrid()->GetWalkable());
+		m_state = WAIT;
 		return;
 	}
 
@@ -400,7 +433,7 @@ void CMonster::TargetRun(float _deltaTick)
 
 		if (m_pathIndex >= m_path.size())
 		{
-			TarGetDestination();
+			TarGetDestination(_pNavi);
 			m_pathIndex = 0;
 		}
 		else
@@ -411,12 +444,11 @@ void CMonster::TargetRun(float _deltaTick)
 	}
 }
 
-void CMonster::SetNextDestination()
+void CMonster::SetNextDestination(CNavigation* _pNavi)
 {
 	u_int x;
 	u_int z;
-	CNavigation* navi = CNavigation::GetInstance();
-	bool* walkable = navi->GetWalkable();
+	bool* walkable = m_pMap->GetMapGrid()->GetWalkable();
 
 	while (true)
 	{
@@ -428,25 +460,11 @@ void CMonster::SetNextDestination()
 		{
 			m_destinationPosition.x = static_cast<float>(x);
 			m_destinationPosition.z = static_cast<float>(z);
-			m_path = navi->FindPath(m_currentPosition, m_destinationPosition);
-
-			if (m_path.size() > 1) m_pathIndex = 1;
-			else m_pathIndex = 0;
 			break;
 		}
 	}
-
-	if (m_path.size() > 1 && m_path.size() < 100)
-	{
-		SetUnitVector();
-		if (Distance(m_path[m_pathIndex], m_currentPosition) >= 0.4f)
-		{
-			m_state = RUN;
-			SendPacketMove();
-		}
-	}
-
-	m_distance = DISTANCE;
+	_pNavi->Add(m_currentPosition, m_destinationPosition, &m_path, walkable);
+	m_state = WAIT;
 }
 
 void CMonster::SetUnitVector()

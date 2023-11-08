@@ -38,6 +38,34 @@ std::vector<CSector*> CSector::Difference(sector_t _b)
 	return result;
 }
 
+void CSector::WrapUser(CUser& _pUser)
+{
+	for (auto s : m_AdjacentSector)
+	{
+		s->WrapDeleteUser(_pUser);
+	}
+}
+
+void CSector::WrapDeleteUser(CUser& _pUser)
+{
+	CLock lcok(m_cs_user);
+
+	char buffer[10];
+	char* tempBuffer = buffer;
+
+	*(u_short*)tempBuffer = 6;
+	tempBuffer += sizeof(u_short);
+	*(u_short*)tempBuffer = 97;
+	tempBuffer += sizeof(u_short);
+	*(u_short*)tempBuffer = _pUser.GetIndex();
+	tempBuffer += sizeof(u_short);
+
+	for (auto u : m_userList)
+	{
+		u.second->Send(buffer, tempBuffer - buffer);
+	}
+}
+
 void CSector::DeleteUsersOutOfSector(CUser& _user)
 {
 	EnterCriticalSection(&m_cs_user);
@@ -110,7 +138,7 @@ void CSector::FetchUserInfoInNewSector(CUser& _user)
 
 		*(u_short*)tempBuffer = 6 + (32 * size);
 		tempBuffer += sizeof(u_short);
-		*(u_short*)tempBuffer = CS_PT_OUTSECTOR_MONSTER;
+		*(u_short*)tempBuffer = CS_PT_NEWSECTOR_USER;
 		tempBuffer += sizeof(u_short);
 		*(u_short*)tempBuffer = size;
 		tempBuffer += sizeof(u_short);
@@ -183,7 +211,7 @@ void CSector::DeleteMonstersOutOfSector(CUser& _user)
 	}
 }
 
-void CSector::FetchMonsgerInfoInNewSector(CUser& _user)
+void CSector::FetchMonsterInfoInNewSector(CUser& _user)
 {
 	EnterCriticalSection(&m_cs_monster);
 	monster_t monsterList = m_monsterList;

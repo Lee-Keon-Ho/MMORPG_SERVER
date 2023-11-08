@@ -1,14 +1,14 @@
 #pragma once
 #include "VECTOR.h"
 #include "PacketStruct.h"
-#include "Navigation.h"
-#include "User.h"
 #include <vector>
 
 class CSector;
 class CMap;
+class CUser;
+class CNavigation;
 
-using Path = std::vector<VECTOR3>; // 크기를 어느정도 잡아놓고 사용하는게 좋다 구조체라서 복사가 이루어진다.
+using Path = std::vector<VECTOR3>;
 
 class CMonster 
 {
@@ -20,7 +20,8 @@ protected:
 		HIT,
 		TARGET_RUN,
 		ATTACK,
-		DIE
+		DIE,
+		WAIT
 	};
 protected:
 	VECTOR3			m_unitVector;
@@ -58,23 +59,26 @@ public:
 	void SendPacketCreate(CUser* _pUser);
 	void SendPacketMove();
 
-	virtual void Update(float _deltaTick);
+	virtual void Update(float _deltaTick, CNavigation* _pNavi);
 	void Hit(CUser* _pTarget);
+
 	int GetIndex();
 	int GetType();
 	VECTOR3* GetPosition();
 	VECTOR3* GetDestinationPosition();
+	Path* GetPath();
 
 protected:
-	virtual void Idle(float _deltaTick);
+	virtual void Idle(float _deltaTick, CNavigation* _pNavi);
 
-	void Run(float _deltaTick);
-	void Hit(float _deltaTick);
-	void Attack(float _deltaTick);
-	void Die(float _deltaTick);
-	void TarGetDestination();
-	void TargetRun(float _deltaTick);
-	void SetNextDestination();
+	void Run(float _deltaTick, CNavigation* _pNavi);
+	void Hit(float _deltaTick, CNavigation* _pNavi);
+	void Attack(float _deltaTick, CNavigation* _pNavi);
+	void Die(float _deltaTick, CNavigation* _pNavi);
+	void Wait();
+	void TarGetDestination(CNavigation* _pNavi);
+	void TargetRun(float _deltaTick, CNavigation* _pNavi);
+	void SetNextDestination(CNavigation* _pNavi);
 	void SetUnitVector();
 	void SendPacketAttack();
 	void SendPacketRegen();
