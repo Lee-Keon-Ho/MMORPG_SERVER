@@ -3,7 +3,7 @@
 #include <stdexcept>
 CMapGrid::CMapGrid()
 {
-	memset(m_walkable, 0, GRID_SIZE * GRID_SIZE);
+	memset(m_walkable, 0, grid_size * grid_size);
 }
 
 CMapGrid::CMapGrid(const char* _fileName)

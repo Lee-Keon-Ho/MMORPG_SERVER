@@ -1,53 +1,44 @@
 #include "UserManager.h"
-#include "Map.h"
 #include "../NetCore/Lock.h"
 
-CUserManager::CUserManager() : m_userNumber(0), m_pMap(nullptr)
+CUserManager::CUserManager() : 
+	m_userNumber(0),
+	m_userListLock(new SRWLOCK()), 
+	m_loginUserSRWLock(new SRWLOCK())
 {
-	InitializeCriticalSection(&m_cs_user);
-	InitializeCriticalSection(&m_cs_loginUser);
+	InitializeSRWLock(m_userListLock);
+	InitializeSRWLock(m_loginUserSRWLock);
 }
 
 CUserManager::~CUserManager()
 {
-	DeleteCriticalSection(&m_cs_user);
-	DeleteCriticalSection(&m_cs_loginUser);
+	if (m_loginUserSRWLock) { delete m_loginUserSRWLock; m_loginUserSRWLock = nullptr; }
+	if (m_userListLock) { delete m_userListLock; m_userListLock = nullptr; }
 }
 
-void CUserManager::Add(CUser* _pUser)
+void CUserManager::Add(ACCEPT_SOCKET_INFO _info)
 {
-	CLock lock(m_cs_user);
-	m_userList.push_back(_pUser);
+	CLock lock(m_userListLock, eLockType::EXCLUSIVE);
+	m_userList.insert(std::make_pair(_info.socket, std::make_unique<CUser>(_info)));
 }
 
 void CUserManager::Add(sCharacterInfo& _info, CUser* _pUser)
 {
+	CLock lock(m_loginUserSRWLock, eLockType::EXCLUSIVE);
 	m_loginUserList.insert(make_pair(_info.name, _pUser));
 }
 
-void CUserManager::Del(CUser* _pUser)
+void CUserManager::Del(SOCKET _socket)
 {
-	CLock lock(m_cs_user);
-	std::list<CUser*>::iterator iter = m_userList.begin();
-	std::list<CUser*>::iterator iterEnd = m_userList.end();
-	CUser* pUser;
-	for (; iter != iterEnd; )
-	{
-		pUser = *iter;
-		
-		if (pUser->GetSocket() == _pUser->GetSocket())
-		{
-			iter = m_userList.erase(iter);
-		}
-		else iter++;
-	}
+	CLock lock(m_userListLock, eLockType::EXCLUSIVE);
+	auto iter = m_userList.find(_socket);
+	if (iter != m_userList.end()) m_userList.erase(iter);
 }
 
 bool CUserManager::Find(wchar_t* _key, CUser* _pUser)
 {
-	CLock lock(m_cs_loginUser);
+	CLock lock(m_loginUserSRWLock, eLockType::EXCLUSIVE);
 	auto pUser = m_loginUserList.find(_key);
-
 	if (pUser == m_loginUserList.end()) return false;
 
 	_pUser->SetInfo(pUser->second->GetCharacterInfo());
@@ -58,62 +49,31 @@ bool CUserManager::Find(wchar_t* _key, CUser* _pUser)
 
 int CUserManager::AddUserNumber()
 {
-	m_userNumber++;
-	return m_userNumber;
+	return ++m_userNumber;
 }
 
-int CUserManager::GetUserCount()
+void CUserManager::SendAll(LKH::sharedPtr<PACKET> _buffer, int _size)
 {
-	return static_cast<int>(m_userList.size());
-}
+	CLock lock(m_userListLock, eLockType::SHARED);
 
-void CUserManager::SendAll(char* _buffer, int _size)
-{
-	EnterCriticalSection(&m_cs_user);
-	std::list<CUser*> userList = m_userList;
-	LeaveCriticalSection(&m_cs_user);
-
-	for (CUser* pUser : userList)
+	for (auto& pUser : m_userList)
 	{
-		pUser->Send(_buffer, _size);
+		pUser.second->Send(_buffer, _size);
 	}
 }
 
-void CUserManager::SendAll(char* _buffer, int _size, SOCKET _socket)
+std::map<SOCKET, std::unique_ptr<CUser>> CUserManager::GetUserList()
 {
-	EnterCriticalSection(&m_cs_user);
-	std::list<CUser*> userList = m_userList;
-	LeaveCriticalSection(&m_cs_user);
-
-	for (CUser* pUser : m_userList)
-	{
-		if (pUser->GetSocket() != _socket)
-		{
-			pUser->Send(_buffer, _size);
-		}
-	}
+	CLock lock(m_userListLock, eLockType::SHARED);
+	return std::move(m_userList);
 }
 
-void CUserManager::SendUserCount(CUser& _user)
+int CUserManager::GetUserSize()
 {
-	char sendBuffer[100];
-	char* tempBuffer;
-
-	tempBuffer = sendBuffer;
-
-	*(u_short*)tempBuffer = 8;
-	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = 99;
-	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = GetUserCount();
-	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = _user.GetUserCountInSector();
-	tempBuffer += sizeof(u_short);
-
-	_user.Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
+	return m_userList.size();
 }
 
-void CUserManager::SetMap(CMap* _map)
+void CUserManager::retUser(std::map<SOCKET, std::unique_ptr<CUser>> _pUser)
 {
-	m_pMap = _map;
+	m_userList = std::move(_pUser);
 }

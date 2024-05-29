@@ -1,4 +1,5 @@
 #include "TAcceptor.h"
+#include "IOCP.h"
 #include <stdio.h>
 
 CTAcceptor::CTAcceptor(PCSTR _ip, u_short _port) :
@@ -28,6 +29,11 @@ void CTAcceptor::RunLoop()
 	{
 		socketInfo.socket = ::accept(m_listener.GetSokcet(), (sockaddr*)&socketInfo.addr, &size);
 
-		Handle(socketInfo);
+		onConnect(socketInfo);
 	}
+}
+
+void CTAcceptor::onConnect(ACCEPT_SOCKET_INFO _info)
+{
+	OnConnect(_info);
 }

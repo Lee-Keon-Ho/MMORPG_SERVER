@@ -3,8 +3,13 @@
 #include "MonsterManager.h"
 #include "Notice.h"
 #include "FieldManager.h"
+#include "MonitorConnection.h"
+#include <thread>
+#include <chrono>
 #include <stdio.h>
 #include <WS2tcpip.h>
+#include "ODBCManager.h"
+#pragma comment(lib, "Winmm.lib")
 
 #ifdef _DEBUG
 #pragma comment (lib, "./../x64/Debug/NetCore.lib")
@@ -14,7 +19,12 @@
 
 #pragma comment (lib, "winmm.lib")
 
-CFieldApp::CFieldApp() : m_pThreadManager(nullptr), m_pFieldAcceptor(nullptr)
+CFieldApp::CFieldApp() : 
+	m_pThreadManager(nullptr), 
+	m_pFieldAcceptor(nullptr), 
+	m_pLoginConnector(nullptr),
+	m_pMonitorAcceptor(nullptr),
+	m_pHeartBeat(nullptr)
 {
 }
 
@@ -34,12 +44,19 @@ bool CFieldApp::CreateInstance()
 	CMonsterManager::GetInstance();
 	CNotice::GetInstance();
 
-	if (!m_pFieldAcceptor) m_pFieldAcceptor = new CFieldAcceptor("112.184.241.183", 30002);
+	if (!m_pFieldAcceptor) m_pFieldAcceptor = std::make_unique<CFieldAcceptor>("112.184.241.183", 30005);
 	if (!m_pFieldAcceptor) return false;
-	if (!m_pLoginConnector) m_pLoginConnector = new CLoginConnector("112.184.241.183", 40003);
+	if (!m_pLoginConnector) m_pLoginConnector = std::make_unique<CLoginConnector>("112.184.241.183", 60003);
 	if (!m_pLoginConnector) return false;
-	if (!m_pThreadManager) m_pThreadManager = new CThreadManager();
+	/*if(!m_pMonitorAcceptor) m_pMonitorAcceptor = std::make_unique<CMonitorAcceptor>("112.184.241.183", 90003);*/
+	//if (!m_pMonitorAcceptor) return false;
+	if (!m_pThreadManager) m_pThreadManager = std::make_unique<CThreadManager>();
 	if (!m_pThreadManager) return false;
+	if (!CODBCManager::GetInstance()->Initialize((SQLWCHAR*)L"account")) return false;
+	if (!m_pHeartBeat) m_pHeartBeat = std::make_unique<CHeartBeat>();
+	if (!m_pHeartBeat) return false;
+
+	m_hEvent = CreateEvent(nullptr, false, false, nullptr);
 
 	return true;
 }
@@ -49,32 +66,38 @@ bool CFieldApp::StartInstance()
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 
-	if (!m_pLoginConnector->Start()) return false;
-	if (!m_pThreadManager->Start(si.dwNumberOfProcessors * 2)) return false;
+	if (!m_pLoginConnector.get()->Start()) return false;
+	if (!m_pFieldAcceptor.get()->Start()) return false;
+	//if (!m_pMonitorAcceptor.get()->Start()) return false;
+	if (!m_pThreadManager.get()->Start(si.dwNumberOfProcessors * 2)) return false;
+
 	CNotice::GetInstance()->Start();
 	CMonsterManager::GetInstance()->Start();
-	
+	//CMoniterConnection::GetInstance()->Start();
 	printf("server start...\n");
 	return true;
 }
 
 void CFieldApp::RunLoop()
 {
-	// 생각하고 수정을 해야한다. 방향성
-	//WaitForSingleObject(CMonsterManager::GetInstance()->GetHandle(), INFINITE);
+	DWORD dwResult = 0;
+
 	while (true)
 	{
-		Sleep(1);
+		dwResult = WaitForSingleObject(m_hEvent, wait_time);
+		if (dwResult == WAIT_OBJECT_0 || dwResult == WAIT_TIMEOUT)
+		{
+			m_pHeartBeat.get()->Check();
+			ResetEvent(m_hEvent);
+		}
+		else
+		{
+			std::cout << "WaitForSingleObject fail Error : " + GetLastError() << std::endl;
+		}
 	}
 }
 
 void CFieldApp::DeleteInstance()
 {
-	if (m_pFieldAcceptor) { delete m_pFieldAcceptor; m_pFieldAcceptor = nullptr; }
-	if (m_pThreadManager) { delete m_pThreadManager; m_pThreadManager = nullptr; }
-}
-
-void CFieldApp::Handle(ACCEPT_SOCKET_INFO _socket)
-{
-	CUser* pUser = new CUser(_socket);
+	if (m_hEvent != nullptr) CloseHandle(m_hEvent);
 }

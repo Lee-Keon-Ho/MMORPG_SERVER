@@ -4,12 +4,32 @@
 #include "MonsterManager.h"
 #include "FieldManager.h"
 #include "PacketType.h"
+#include "ODBCManager.h"
 #include <algorithm>
 #include <iostream>
 
 CPacketHandler::CPacketHandler()
 {
-	srand(time(NULL));
+	m_lpfp.reserve(static_cast<u_short>(eC2FS_PT::MAX));
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_Latency);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_LogIn);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_PlayerInField);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_NextField);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_PlayerNowPosition);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_PlayerMove);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_PlayerArrive);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_PlayerLogOut);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_IDLE_PlayerAttack);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_MOVE_PlayerAttack);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_TargetMonster);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_Chatting);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_IDLE_ArcherAttack);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_MOVE_ArcherAttack);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_HIT_Single_monster);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_HeartBeat);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_Warp);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_Dummy_NextField);
+	m_lpfp.push_back(&CPacketHandler::PT_C2FS_ChannelChange);
 }
 
 CPacketHandler::~CPacketHandler()
@@ -17,277 +37,211 @@ CPacketHandler::~CPacketHandler()
 	
 }
 
-int CPacketHandler::Handle(CUser* _pUser, char* _buffer)
+int CPacketHandler::Handle(CUser* _pUser, PACKET* _packet)
 {
-	u_short size = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	u_short type = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
+	(this->*m_lpfp[_packet->type])(_pUser, _packet);
+	assert(_packet->size > 0);
 
-	if (size <= 0) return 0;
-
-	switch (type)
-	{
-	case 0:
-		Latency(_pUser, _buffer);
-		break;
-	case CS_PT_LOGIN:
-		PT_C2FS_LogIn(_pUser, _buffer);
-		break;
-	case CS_PT_PLYAER_INFIELD:
-		PT_C2FS_PlayerInField(_pUser, _buffer);
-		break;
-	case CS_PT_NEXT_FIELD:
-		PT_C2FS_NextField(_pUser, _buffer);
-		break;
-	case CS_PT_NEWUSERENTRY:
-		PT_C2FS_PlayerNowPosition(_pUser, _buffer);
-		break;
-	case CS_PT_PLYAER_MOVE:
-		PT_C2FS_PlayerMove(_pUser, _buffer);
-		break;
-	case CS_PT_PLYAER_ARRIVE:
-		PT_C2FS_PlayerArrive(_pUser, _buffer);
-		break;
-	case CS_PT_PLYAER_LOGOUT:
-		PT_C2FS_PlayerLogOut(_pUser, _buffer);
-		break;
-	case CS_PT_IDLE_PLAYER_ATTACK:
-		PT_C2FS_IDLE_PlayerAttack(_pUser, _buffer);
-		break;
-	case CS_PT_MOVE_PLAYER_ATTACK:
-		PT_C2FS_MOVE_PlayerAttack(_pUser, _buffer);
-		break;
-	case CS_PT_HIT_TARGET_MONSTER:
-		PT_C2FS_TargetMonster(_pUser, _buffer);
-		break;
-	case CS_PT_PLAYER_CHATTING:
-		PT_C2FS_Chatting(_pUser, _buffer);
-		break;
-	case CS_PT_IDLE_ARCHER_ATTACK:
-		PT_C2FS_IDLE_ArcherAttack(_pUser, _buffer);
-		break;
-	case CS_PT_MOVE_ARCHER_ATTACK:
-		PT_C2FS_MOVE_ArcherAttack(_pUser, _buffer);
-		break;
-	case CS_PT_SINGLE_HIT_MONSTER:
-		PT_C2FS_HIT_Single_monster(_pUser, _buffer);
-		break;
-	case 98:
-		test(_pUser, _buffer);
-		break;
-	case 99:
-		GetUserCount(_pUser);
-		break;
-	default:
-		break;
-	}
-
-	return size;
+	return _packet->size;
 }
 
-void CPacketHandler::Latency(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_Latency(CUser* _pUser, PACKET* _packet)
 {
-	PACKET_LATENCY packet(sizeof(PACKET_LATENCY), 0, *(float*)_buffer);
+	C2FS_PACKET_LATENCY* recvPacket = reinterpret_cast<C2FS_PACKET_LATENCY*>(_packet);
 
-	_pUser->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_LATENCY));
+	LKH::sharedPtr<PACKET> sendPacket = new FS2C_PACKET_LATENCY(recvPacket->time);
+
+	_pUser->Send(sendPacket, sizeof(FS2C_PACKET_LATENCY));
 }
 
-void CPacketHandler::PT_C2FS_LogIn(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_LogIn(CUser* _pUser, PACKET* _packet)
 {
+	C2FS_PACKET_LOGIN* recvPacket = reinterpret_cast<C2FS_PACKET_LOGIN*>(_packet);
+
 	CUserManager* userManager = CUserManager::GetInstance();
-	int len = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	wchar_t key[30] = { 0, };
-	memcpy(key, _buffer, len);
 
-	if (userManager->Find(key, _pUser))
+	if (userManager->Find(recvPacket->key, _pUser))
 	{
-		userManager->Add(_pUser);
 		_pUser->SetIndex(userManager->AddUserNumber());
+		_pUser->SetInfo();
 		_pUser->SendPacket_LogIn();
 	}
 }
 
-void CPacketHandler::PT_C2FS_PlayerInField(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_PlayerInField(CUser* _pUser, PACKET* _packet)
 {
-	CUserManager* userManager = CUserManager::GetInstance();
-
 	_pUser->SendPacket_Infield();
-	_pUser->SendPacket_MonsterInfo();
+	if (_pUser->GetField() != 0)_pUser->SendPacket_MonsterInfo();
 
 	if(_pUser->GetUserCountInSector() != 1) _pUser->SendPacket_NewUserEntry();
 }
 
-void CPacketHandler::PT_C2FS_NextField(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_NextField(CUser* _pUser, PACKET* _packet)
 {
-	int fieldIndex = *(u_short*)_buffer;
-	
-	_pUser->SetField(fieldIndex);
+	C2FS_PACKET_NEXT_FIELD* recvPacket = reinterpret_cast<C2FS_PACKET_NEXT_FIELD*>(_packet);
 
-	if (fieldIndex == 0)
-	{
-		VECTOR3 position({ 73.0f,1.0f,70.0f });
-		_pUser->SetInfo(position);
-		_pUser->SendPacket_NextField();
-	}
-	else 
-	{
-		VECTOR3 position({ 35.0f,1.0f,215.0f });
-		_pUser->SetInfo(position);
-		_pUser->SendPacket_NextField();
-		//_pUser->CheckSectorUpdates();
-	}
-}
+	_pUser->SetField(recvPacket->fieldIndex);
 
-void CPacketHandler::test(CUser* _pUser, char* _buffer)
-{
-	int field = *(u_short*)_buffer;
+	VECTOR3 position{ 0.0f, 0.0f, 0.0f };
 
-	PACKET_LOGIN packet(sizeof(PACKET_LOGIN), 98, field);// InForestHunt
-	_pUser->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_LOGIN));
-}
-
-void CPacketHandler::PT_C2FS_PlayerNowPosition(CUser* _pUser, char* _buffer)
-{
-	int num = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-
-	VECTOR3 position = *(VECTOR3*)_buffer;
-
+	if (recvPacket->fieldIndex == 0) position = { 73.0f, 1.0f, 70.0f };
+	else position = { 35.0f, 1.0f, 215.0f };
 	_pUser->SetPosition(position);
-	_pUser->SetCurrentSector(position);
+	_pUser->SetInfo();
 
-	//_user->NowPosition();
-	_pUser->CheckSectorUpdates();
+	_pUser->SendPacket_NextField();
 }
 
-void CPacketHandler::PT_C2FS_PlayerMove(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_Warp(CUser* _pUser, PACKET* _packet)
 {
-	int index = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	int state = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	VECTOR3 current = *(VECTOR3*)_buffer;
-	_buffer += sizeof(VECTOR3);
-	VECTOR3 end = *(VECTOR3*)_buffer;
-	_buffer += sizeof(VECTOR3);
-	
-	_pUser->SetInfo(current, end, state);
-	_pUser->SendPacket_Move();
+	C2FS_PACKET_WARP* recvPacket = reinterpret_cast<C2FS_PACKET_WARP*>(_packet);
+
+	VECTOR3 position{ 0.0f, 0.0f, 0.0f };
+	if (recvPacket->field == 0) position = { 73.0f, 1.0f, 70.0f };
+	else if(recvPacket->field == 1) position = { 35.0f, 1.0f, 215.0f };
+	_pUser->SetPosition(position);
+
+	CODBCManager::GetInstance()->Update_Field(*_pUser, recvPacket->field);
+
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_WARP(recvPacket->field);
+
+	_pUser->Send(packet, sizeof(FS2C_PACKET_WARP));
 }
 
-void CPacketHandler::PT_C2FS_PlayerArrive(CUser* _pUser, char* _buffer) // stop
-{
-	VECTOR3 position({ 0,0,0 });
-	int num = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	int state = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	float y = *(float*)_buffer;
-	_buffer += sizeof(float);
-	position = *(VECTOR3*)_buffer;
-	_buffer += sizeof(VECTOR3);
-
-	_pUser->SetInfo(position, position, y, state);
-	_pUser->SetCurrentSector(position);
-
-	_pUser->CheckSectorUpdates();
-
-	_pUser->SendPacket_Arrive();
-}
-
-void CPacketHandler::PT_C2FS_PlayerLogOut(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_ChannelChange(CUser* _pUser, PACKET* _packet)
 {
 	CUserManager* pUserManager = CUserManager::GetInstance();
 
-	PACKET_LOGOUT packet(sizeof(PACKET_LOGOUT), CS_PT_PLYAER_LOGOUT, _pUser->GetIndex());
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_LOGOUT(_pUser->GetIndex());
 
-	pUserManager->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_LOGOUT));
-	pUserManager->Del(_pUser);
-	
 	_pUser->LogOut();
+
+	pUserManager->SendAll(packet, packet.get()->size);
+
+	_pUser->SendPacket_ChannelChange();
+
+	//pUserManager->Del(_pUser->GetSocket());
 }
 
-void CPacketHandler::PT_C2FS_IDLE_PlayerAttack(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_Dummy_NextField(CUser* _pUser, PACKET* _packet)
 {
-	float rotationY = *(float*)_buffer;
-	_buffer += sizeof(float);
-	
-	_pUser->SetInfo(rotationY, 2);
+	FS2C_PACKET_DUMMY_NEXT_FIELD* recvPacket = reinterpret_cast<FS2C_PACKET_DUMMY_NEXT_FIELD*>(_packet);
 
+	_pUser->SetField(recvPacket->fieldIndex);
+
+	//_pUser->SetInfo(recvPacket->position);
+	_pUser->SendPacket_NextField();
+}
+
+void CPacketHandler::PT_C2FS_PlayerNowPosition(CUser* _pUser, PACKET* _packet)
+{
+	C2FS_PACKET_NOW_POSITION* recvPacket = reinterpret_cast<C2FS_PACKET_NOW_POSITION*>(_packet);
+
+	VECTOR3 position = *(VECTOR3*)_packet;
+
+	_pUser->SetPosition(recvPacket->position);
+	_pUser->SetCurrentSector(recvPacket->position);
+
+	_pUser->CheckSectorUpdates();
+}
+
+void CPacketHandler::PT_C2FS_PlayerMove(CUser* _pUser, PACKET* _packet)
+{
+	C2FS_PACKET_PLYAER_MOVE* recvPacket = reinterpret_cast<C2FS_PACKET_PLYAER_MOVE*>(_packet);
+	_pUser->SetInfo(recvPacket->currentPosition, recvPacket->goalPosition, recvPacket->state);
+	_pUser->SendPacket_Move();
+}
+
+void CPacketHandler::PT_C2FS_PlayerArrive(CUser* _pUser, PACKET* _packet)
+{
+	C2FS_PACKET_PLAYER_ARRIVE* recvPacket = reinterpret_cast<C2FS_PACKET_PLAYER_ARRIVE*>(_packet);
+
+	_pUser->SetInfo(recvPacket->position, recvPacket->position, recvPacket->rotation_y, recvPacket->state);
+
+	_pUser->SetCurrentSector(recvPacket->position);
+	_pUser->CheckSectorUpdates();
+	_pUser->SendPacket_Arrive();
+
+	CODBCManager::GetInstance()->Update_Position(*_pUser);
+}
+
+void CPacketHandler::PT_C2FS_PlayerLogOut(CUser* _pUser, PACKET* _packet)
+{
+	CUserManager* pUserManager = CUserManager::GetInstance();
+
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_LOGOUT(_pUser->GetIndex());
+
+	_pUser->LogOut();
+
+	pUserManager->SendAll(packet, sizeof(FS2C_PACKET_LOGOUT));
+
+	_pUser->SendPacket_LogOut();
+}
+
+void CPacketHandler::PT_C2FS_IDLE_PlayerAttack(CUser* _pUser, PACKET* _packet)
+{
+	C2FS_PACKET_PLAYER_IDLE_ATTACK* recvPacket = reinterpret_cast<C2FS_PACKET_PLAYER_IDLE_ATTACK*>(_packet);
+	
+	_pUser->SetInfo(recvPacket->rotation_y, attack);
 	_pUser->SendPacket_Idle_Attack();
 }
 
-void CPacketHandler::PT_C2FS_MOVE_PlayerAttack(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_MOVE_PlayerAttack(CUser* _pUser, PACKET* _packet)
 {
-	VECTOR3 position = *(VECTOR3*)_buffer;
-	_buffer += sizeof(VECTOR3);
-	float y = *(float*)_buffer;
-	_buffer += sizeof(float);
+	C2FS_PACKET_PLAYER_MOVE_ATTACK* recvPacket = reinterpret_cast<C2FS_PACKET_PLAYER_MOVE_ATTACK*>(_packet);
 
-	_pUser->SetInfo(position, position, y, 2);
-
+	_pUser->SetInfo(recvPacket->position, recvPacket->position, recvPacket->rotation_y, attack);
 	_pUser->SendPacket_Move_Attack();
 }
 
-void CPacketHandler::PT_C2FS_TargetMonster(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_TargetMonster(CUser* _pUser, PACKET* _packet)
 {
-	int count = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	int index = 0;
+	C2FS_PACKET_TARGET_MONSTER* recvPacket = reinterpret_cast<C2FS_PACKET_TARGET_MONSTER*>(_packet);
+	int count = recvPacket->count;
 
 	CMonsterManager* mobManager = CMonsterManager::GetInstance();
 	
-	for (int i = 0; i < count; i++)
+	for (int i = 0; i < count; ++i)
 	{
-		index = *(u_short*)_buffer;
-		_buffer += sizeof(u_short);
-
-		mobManager->Hit(_pUser, index);
+		mobManager->Hit(_pUser, recvPacket->indexs[i]);
 	}
 }
 
-void CPacketHandler::PT_C2FS_Chatting(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_Chatting(CUser* _pUser, PACKET* _packet)
 {
-	int len = *(u_short*)_buffer;
-	_buffer += sizeof(u_short);
-	char chat[100];
-	memcpy(chat, _buffer, len);
+	C2FS_PACKET_CHATTING* recvPacket = reinterpret_cast<C2FS_PACKET_CHATTING*>(_packet);
 
-	_pUser->SendPacket_Chatting(chat, len);
+	_pUser->SendPacket_Chatting(recvPacket->str);
 }
 
-void CPacketHandler::PT_C2FS_IDLE_ArcherAttack(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_IDLE_ArcherAttack(CUser* _pUser, PACKET* _packet)
 {
-	float rotationY = *(float*)_buffer;
-	_buffer += sizeof(float);
+	C2FS_PACKET_IDLE_ARCHER_ATTACK* recvPacket = reinterpret_cast<C2FS_PACKET_IDLE_ARCHER_ATTACK*>(_packet);
 
-	_pUser->SetInfo(rotationY, 2);
+	_pUser->SetInfo(recvPacket->rotation_y, attack);
 
-	_pUser->SendPacket_Idle_Attack();
+	_pUser->SendPacket_Idle_ArcherAttack();
 }
 
-void CPacketHandler::PT_C2FS_MOVE_ArcherAttack(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_MOVE_ArcherAttack(CUser* _pUser, PACKET* _packet)
 {
-	VECTOR3 position = *(VECTOR3*)_buffer;
-	_buffer += sizeof(VECTOR3);
-	float y = *(float*)_buffer;
-	_buffer += sizeof(float);
+	C2FS_PACKET_MOVE_ARCHER_ATTACK* recvPacket = reinterpret_cast<C2FS_PACKET_MOVE_ARCHER_ATTACK*>(_packet);
 
-	_pUser->SetInfo(position, position, y, 2);
+	_pUser->SetInfo(recvPacket->position, recvPacket->position, recvPacket->rotation_y, attack);
 
 	_pUser->SendPacket_Move_Attack();
 }
 
-void CPacketHandler::PT_C2FS_HIT_Single_monster(CUser* _pUser, char* _buffer)
+void CPacketHandler::PT_C2FS_HIT_Single_monster(CUser* _pUser, PACKET* _packet)
 {
-	int index = *(u_short*)_buffer;
+	C2FS_PACKET_HIT_SINGLE_MONSTER* recvPacket = reinterpret_cast<C2FS_PACKET_HIT_SINGLE_MONSTER*>(_packet);
 
-	CMonsterManager::GetInstance()->Hit(_pUser, index);
+	CMonsterManager::GetInstance()->Hit(_pUser, recvPacket->index);
+
+	CODBCManager::GetInstance()->Update_Level_and_Exp(*_pUser);
 }
 
-void CPacketHandler::GetUserCount(CUser* _user)
+void CPacketHandler::PT_C2FS_HeartBeat(CUser* _pUser, PACKET* _packet)
 {
-	CUserManager::GetInstance()->SendUserCount(*_user);
+	_pUser->recvHeartBeat();
 }

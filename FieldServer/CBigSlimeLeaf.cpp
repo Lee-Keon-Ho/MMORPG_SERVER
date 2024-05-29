@@ -41,6 +41,9 @@ void CBigSlimeLeaf::Update(float _deltaTick, CNavigation* _pNavi)
 	case DIE:
 		Die(_deltaTick, _pNavi);
 		break;
+	case WAIT:
+		Wait(_deltaTick, _pNavi);
+		break;
 	}
 }
 
@@ -102,7 +105,7 @@ void CBigSlimeLeaf::TargetRun(float _deltaTick, CNavigation* _pNavi)
 	}
 	else
 	{
-		sector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
+		sector = (static_cast<int>(m_currentPosition.x) / sector_size) + (static_cast<int>(m_currentPosition.z) / sector_size) * sector_line;
 		if (sector != m_currentSector)
 		{
 			SendPacketExitSector(m_currentSector, sector);

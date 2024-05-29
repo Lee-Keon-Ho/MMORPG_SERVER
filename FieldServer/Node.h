@@ -5,21 +5,24 @@
 class CNode
 {
 public:
-	unsigned int m_x;
-	unsigned int m_y;
+	int m_x;
+	int m_y;
 
-	unsigned int m_f; // total cost
-	unsigned int m_g; // cost from start
-	unsigned int m_h; // cost to end
+	int m_f; // total cost
+	int m_g; // cost from start
+	int m_h; // cost to end
 
 	CNode* m_parent;
 public:
 	CNode();
-	CNode(unsigned int _x, unsigned int _y);
+	CNode(int _x, int _y);
 	~CNode();
 
 	void GetParent(std::vector<VECTOR3>& _vector);
 
-	void SetNode(CNode _pEnd, CNode* _pParent, unsigned int _dest);
+	void SetNode(CNode _pEnd, CNode* _pParent, int _dest);
 	void SetParent(CNode* _pParent);
+    int getF() const {
+        return m_g + m_h;
+    }
 };

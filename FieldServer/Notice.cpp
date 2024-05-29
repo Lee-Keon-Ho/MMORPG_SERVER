@@ -22,19 +22,10 @@ void CNotice::RunLoop()
 	{
 		Sleep(10000);
 		
-		int rand = Random(MAX_ARRAY_SIZE - 1, 0);
+		int rand = Random(array_max_size - 1, 0);
 
-		char sendBuffer[50];
-		char* tempBuffer = sendBuffer;
-		*(u_short*)tempBuffer = 6 + MAX_CHAR_SIZE;
-		tempBuffer += sizeof(u_short);
-		*(u_short*)tempBuffer = CS_PT_NOTICE;
-		tempBuffer += sizeof(u_short);
-		*(u_short*)tempBuffer = MAX_CHAR_SIZE;
-		tempBuffer += sizeof(u_short);
-		memcpy(tempBuffer, m_list[rand], MAX_CHAR_SIZE);
-		tempBuffer += MAX_CHAR_SIZE;
+		LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_NOTICE(chat_max_size, m_list[rand]);
 
-		CUserManager::GetInstance()->SendAll(sendBuffer, tempBuffer - sendBuffer);
+		CUserManager::GetInstance()->SendAll(packet, sizeof(FS2C_PACKET_NOTICE));
 	}
 }

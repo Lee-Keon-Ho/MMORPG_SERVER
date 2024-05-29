@@ -1,11 +1,27 @@
 #include "Lock.h"
 
-CLock::CLock(CRITICAL_SECTION _cs) : m_cs(_cs)
+CLock::CLock(PSRWLOCK _srwLock, eLockType _type) : m_SRWLock(_srwLock), m_type(_type)
 {
-	EnterCriticalSection(&m_cs);
+	switch (m_type)
+	{
+	case eLockType::SHARED:
+		AcquireSRWLockShared(m_SRWLock);
+		break;
+	case eLockType::EXCLUSIVE:
+		AcquireSRWLockExclusive(m_SRWLock);
+		break;
+	}
 }
 
 CLock::~CLock()
 {
-	LeaveCriticalSection(&m_cs);
+	switch (m_type)
+	{
+	case eLockType::SHARED:
+		ReleaseSRWLockShared(m_SRWLock);
+		break;
+	case eLockType::EXCLUSIVE:
+		ReleaseSRWLockExclusive(m_SRWLock);
+		break;
+	}
 }

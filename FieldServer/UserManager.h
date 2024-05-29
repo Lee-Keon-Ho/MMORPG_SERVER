@@ -1,10 +1,10 @@
 #pragma once
 #include "User.h"
 #include "Sector.h"
+#include "../NetCore/SpinLock.h"
 #include <list>
 #include <vector>
-
-class CMap;
+#include <map>
 
 class CUserManager
 {
@@ -20,31 +20,27 @@ private:
 	~CUserManager();
 
 public:
-	typedef std::list<CUser*> userList_t;
 	typedef std::vector<CSector*> Sector_t;
+	using userList = std::map<SOCKET, std::unique_ptr<CUser>>;
 	typedef std::map<wstring, CUser*> loginUserList;
 
 private:
-	userList_t			m_userList;
+	userList			m_userList;
 	loginUserList		m_loginUserList;
-	CRITICAL_SECTION	m_cs_user;
-	CRITICAL_SECTION	m_cs_loginUser;
-	Sector_t			m_sector;
+	PSRWLOCK			m_userListLock;
+	PSRWLOCK			m_loginUserSRWLock;
 	int					m_userNumber;
-	CMap*				m_pMap;
 public:
-	void Add(CUser* _pUser);
+	void Add(ACCEPT_SOCKET_INFO _pUser);
 	void Add(sCharacterInfo& _info, CUser* _pUser);
-	void Del(CUser* _pUser);
+	void Del(SOCKET _socket);
 	bool Find(wchar_t* _key, CUser* _pUser);
 
 	int AddUserNumber();
-	int GetUserCount();
 
-	void SendAll(char* _buffer, int _size);
-	void SendAll(char* _buffer, int _size, SOCKET _socket);
-	userList_t GetUserList() { return m_userList; }
+	void SendAll(LKH::sharedPtr<PACKET> _buffer, int _size);
 
-	void SendUserCount(CUser& _user);
-	void SetMap(CMap* _map);
+	std::map<SOCKET, std::unique_ptr<CUser>> GetUserList();
+	int GetUserSize();
+	void retUser(std::map<SOCKET, std::unique_ptr<CUser>> _pUser);
 };

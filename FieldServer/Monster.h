@@ -1,4 +1,5 @@
 #pragma once
+#include "../NetCore/sharedPtr.h"
 #include "VECTOR.h"
 #include "PacketStruct.h"
 #include <vector>
@@ -75,7 +76,7 @@ protected:
 	void Hit(float _deltaTick, CNavigation* _pNavi);
 	void Attack(float _deltaTick, CNavigation* _pNavi);
 	void Die(float _deltaTick, CNavigation* _pNavi);
-	void Wait();
+	void Wait(float _deltaTick, CNavigation* _pNavi);
 	void TarGetDestination(CNavigation* _pNavi);
 	void TargetRun(float _deltaTick, CNavigation* _pNavi);
 	void SetNextDestination(CNavigation* _pNavi);

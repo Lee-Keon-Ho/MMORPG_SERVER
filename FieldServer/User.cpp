@@ -1,13 +1,13 @@
-
 #include "User.h"
 #include "../NetCore/RingBuffer.h"
+#include "../NetCore/sharedPtr.h"
 #include "PacketHandler.h"
 #include "FieldManager.h"
 #include "UserManager.h"
+#include "PacketStruct.h"
+#include "ODBCManager.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#define NAME_MAX 32
 
 CUser::CUser() :
 	m_endPosition({ 0.0f,0.0f,0.0f }),
@@ -16,7 +16,6 @@ CUser::CUser() :
 	m_state(0),
 	m_prevSector(0),
 	m_currentSector(0),
-	m_field(0),
 	m_pMap(nullptr),
 	m_pSector(nullptr),
 	m_maxExp(0.0f)
@@ -32,13 +31,12 @@ CUser::CUser(ACCEPT_SOCKET_INFO _socketInfo) :
 	m_state(0),
 	m_prevSector(0),
 	m_currentSector(0),
-	m_field(0),
 	m_pMap(nullptr),
 	m_pSector(nullptr),
 	m_maxExp(20)
 {
-	char buffer[4] = { 0, };
-	Send(buffer, sizeof(buffer));
+	LKH::sharedPtr<PACKET> packet = new PACKET(sizeof(PACKET), 0);
+	Send(packet, sizeof(PACKET));
 }
 
 CUser::CUser(sCharacterInfo& _info) : m_characterInfo(_info), m_endPosition({ 0.0f,0.0f,0.0f })
@@ -47,6 +45,7 @@ CUser::CUser(sCharacterInfo& _info) : m_characterInfo(_info), m_endPosition({ 0.
 
 CUser::~CUser()
 {
+	
 }
 
 int CUser::PacketHandle()
@@ -54,13 +53,9 @@ int CUser::PacketHandle()
 	char* readBuffer = GetPacketBuffer();
 	if (readBuffer == nullptr) return 0;
 
-	int readSize = CPacketHandler::GetInstance()->Handle(this, readBuffer);
+	int readSize = CPacketHandler::GetInstance()->Handle(this, reinterpret_cast<PACKET*>(readBuffer));
 
-	if (readSize > 0)
-	{
-		m_ringBuffer->Read(readSize);
-		return readSize;
-	}
+	if (readSize > 0) return readSize;
 
 	return 0;
 }
@@ -124,23 +119,24 @@ void CUser::SetIndex(int _index)
 
 void CUser::SetPrevSector()
 {
-	m_prevSector = (static_cast<int>(m_characterInfo.position.x) / SECTOR_SIZE) + (static_cast<int>(m_characterInfo.position.z) / SECTOR_SIZE) * SECTOR_LINE;
+	m_prevSector = (static_cast<int>(m_characterInfo.position.x) / sector_size) + (static_cast<int>(m_characterInfo.position.z) / sector_size) * sector_line;
 }
 
 void CUser::SetCurrentSector(VECTOR3& _vector)
 {
-	m_currentSector = (static_cast<int>(_vector.x) / SECTOR_SIZE) + (static_cast<int>(_vector.z) / SECTOR_SIZE) * SECTOR_LINE;
+	m_currentSector = (static_cast<int>(_vector.x) / sector_size) + (static_cast<int>(_vector.z) / sector_size) * sector_line;
 }
 
 void CUser::SetField(int _field)
 {
-	m_field = _field;
+	m_characterInfo.field = _field;
 }
 
 void CUser::SetInfo(sCharacterInfo& _info)
 {
 	m_characterInfo = _info;
 	m_endPosition = _info.position;
+	CODBCManager::GetInstance()->MAX_EXP(*this, m_maxExp);
 }
 
 void CUser::SetInfo(float _rotationY, int _state)
@@ -149,7 +145,7 @@ void CUser::SetInfo(float _rotationY, int _state)
 	m_state = _state;
 }
 
-void CUser::SetInfo(VECTOR3& _position)
+void CUser::SetInfo()
 {
 	if (m_pMap != nullptr)
 	{
@@ -157,12 +153,10 @@ void CUser::SetInfo(VECTOR3& _position)
 		m_pSector->Del(this);
 	}
 
-	m_pMap = CFieldManager::GetInstance()->GetMap(m_field); // 나중에 맵정보를 변경하자
+	m_pMap = CFieldManager::GetInstance()->GetMap(m_characterInfo.field);
 
-	m_characterInfo.position = _position;
-	m_endPosition = _position;
-	m_prevSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
-	m_currentSector = (static_cast<int>(_position.x) / SECTOR_SIZE) + (static_cast<int>(_position.z) / SECTOR_SIZE) * SECTOR_LINE;
+	m_prevSector = (static_cast<int>(m_characterInfo.position.x) / sector_size) + (static_cast<int>(m_characterInfo.position.z) / sector_size) * sector_line;
+	m_currentSector = (static_cast<int>(m_characterInfo.position.x) / sector_size) + (static_cast<int>(m_characterInfo.position.z) / sector_size) * sector_line;
 	m_pSector = m_pMap->GetSector(m_prevSector);
 	m_pSector->Add(this);
 }
@@ -173,7 +167,7 @@ void CUser::SetInfo(VECTOR3& _current, VECTOR3& _end, int _state)
 	m_endPosition = _end;
 	m_state = _state;
 
-	if ((static_cast<int>(m_characterInfo.position.x) / SECTOR_SIZE) + (static_cast<int>(m_characterInfo.position.z) / SECTOR_SIZE) * SECTOR_LINE != m_prevSector)
+	if ((static_cast<int>(m_characterInfo.position.x) / sector_size) + (static_cast<int>(m_characterInfo.position.z) / sector_size) * sector_line != m_prevSector)
 	{
 		CheckSectorUpdates();
 	}
@@ -217,6 +211,11 @@ void CUser::LogOut()
 	m_pMap->Del(this, m_currentSector);
 }
 
+void CUser::Delete()
+{
+	CUserManager::GetInstance()->Del(m_socket);
+}
+
 void CUser::CheckSectorUpdates()
 {
 	if (m_prevSector != m_currentSector)
@@ -235,24 +234,23 @@ int CUser::GetUserCountInSector()
 	return m_pSector->GetSectorUserCount();
 }
 
-void CUser::SendSector(char* _buffer, int _size)
+void CUser::SendSector(LKH::sharedPtr<PACKET> _buffer, int _size)
 {
 	m_pSector->SendAll(_buffer, _size);
 }
 
 void CUser::SendPacket_Infield()
 {
-	char sendBuffer[1000];
-	char* tempBuffer;
 	int userCount;
 	CUser* pUser;
 	int count = 0;
 
-	std::vector<CSector*> adjacentSecotor = m_pSector->GetAdjacentSector();
-
-	for (int i = 0; i < adjacentSecotor.size(); i++)
+	std::vector<CSector*> adjacentSector = m_pSector->GetAdjacentSector();
+	int size = adjacentSector.size();
+	for (int i = 0; i < size; ++i)
 	{
-		std::map<SOCKET, CUser*> userList_t = adjacentSecotor[i]->GetMap();
+		// 2023-12-26 추가 수정필요
+		std::map<SOCKET, CUser*> userList_t = adjacentSector[i]->GetUserList();
 		userCount = static_cast<int>(userList_t.size());
 
 		if (userCount == 0) continue;
@@ -262,40 +260,28 @@ void CUser::SendPacket_Infield()
 
 		while (iter != iterEnd)
 		{
-			if (userCount > 10) userCount = 10;
+			if (userCount > Infield_max_count) userCount = Infield_max_count;
 
-			tempBuffer = sendBuffer;
+			sInfield info[Infield_max_count];
 
-			*(u_short*)tempBuffer = 6 + (67 * userCount);
-			tempBuffer += sizeof(u_short);
-			*(u_short*)tempBuffer = CS_PT_PLYAER_INFIELD;
-			tempBuffer += sizeof(u_short);
-			*(u_short*)tempBuffer = userCount;
-			tempBuffer += sizeof(u_short);
-
-			for (int n = 0; n < userCount; n++, iter++)
+			for (int n = 0; n < userCount && iter != iterEnd; n++, iter++)
 			{
 				pUser = (*iter).second;
 
-				*(u_short*)tempBuffer = pUser->GetIndex();
-				tempBuffer += sizeof(u_short);
-				*(u_short*)tempBuffer = pUser->GetState();
-				tempBuffer += sizeof(u_short);
-				*(u_short*)tempBuffer = pUser->GetCharacter();
-				tempBuffer += sizeof(u_short);
-				*(float*)tempBuffer = pUser->GetRotationY();
-				tempBuffer += sizeof(float);
-				memcpy(tempBuffer, pUser->GetName(), NAME_MAX);
-				tempBuffer += NAME_MAX;
-				memcpy(tempBuffer, pUser->GetPosition(), sizeof(VECTOR3));
-				tempBuffer += sizeof(VECTOR3);
-				memcpy(tempBuffer, pUser->GetEndPosition(), sizeof(VECTOR3));
-				tempBuffer += sizeof(VECTOR3);
+				info[n].index = pUser->GetIndex();
+				info[n].state = pUser->GetState();
+				info[n].character = pUser->GetCharacter();
+				info[n].rotationY = pUser->GetRotationY();
+				memcpy(info[n].name, pUser->GetName(), sizeof(wchar_t) * name_max);
+				memcpy(&info[n].startPosition, pUser->GetPosition(), sizeof(VECTOR3));
+				memcpy(&info[n].goalPosition, pUser->GetEndPosition(), sizeof(VECTOR3));
 			}
 
-			Send(sendBuffer, static_cast<int>(tempBuffer - sendBuffer));
+			LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_INFIELD((6 + sizeof(sInfield) * userCount), static_cast<u_short>(eFS2C_PT::PLAYER_INFIELD), userCount, info);
+
+			Send(packet, static_cast<int>(6 + sizeof(sInfield) * userCount));
 			count++;
-			userCount = static_cast<int>(userList_t.size()) - (10 * count);
+			userCount = static_cast<int>(userList_t.size()) - (Infield_max_count * count);
 		}
 		count = 0;
 	}
@@ -303,83 +289,102 @@ void CUser::SendPacket_Infield()
 
 void CUser::SendPacket_LogIn()
 {
-	PACKET_NEW_LOGIN packet(sizeof(PACKET_NEW_LOGIN), CS_PT_LOGIN, m_index, m_characterInfo);
-	printf("%ld %ld\n", m_index, m_socket_info.socket);
-	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEW_LOGIN));
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_NEW_LOGIN(m_index, m_characterInfo);
+
+	Send(packet, sizeof(FS2C_PACKET_NEW_LOGIN));
 }
 
 void CUser::SendPacket_NextField()
 {
-	PACKET_NEXT_FIELD packet(sizeof(PACKET_NEXT_FIELD), CS_PT_NEXT_FIELD, m_characterInfo.position);
+	LKH::sharedPtr<PACKET> packet = new PACKET_NEXT_FIELD(m_characterInfo.position);
 
-	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEXT_FIELD));
+	Send(packet, sizeof(PACKET_NEXT_FIELD));
 }
 
 void CUser::SendPacket_NewUserEntry()
 {
-	PACKET_NEWUSERENTRY packet(sizeof(PACKET_NEWUSERENTRY), CS_PT_NEWUSERENTRY, m_index, static_cast<u_short>(m_characterInfo.type), m_characterInfo.name, m_characterInfo.position);
-	CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_NEWUSERENTRY));
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_NEWUSERENTRY(m_index, static_cast<u_short>(m_characterInfo.type), m_characterInfo.name, m_characterInfo.position);
+
+	CUserManager::GetInstance()->SendAll(packet, sizeof(FS2C_PACKET_NEWUSERENTRY));
 
 	SendPacket_AdjacentSector_NewUserEntry();
 }
 
 void CUser::SendPacket_AdjacentSector_NewUserEntry()
 {
-	PACKET_ADJACENTSECTOR_NEWUSERENTRY adjacentPacket(sizeof(PACKET_ADJACENTSECTOR_NEWUSERENTRY), CS_PT_SENDSECTOR_NEWUSERENTRY, m_index);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_ADJACENTSECTOR_NEWUSERENTRY(m_index);
 
-	SendSector(reinterpret_cast<char*>(&adjacentPacket), sizeof(PACKET_ADJACENTSECTOR_NEWUSERENTRY));
+	SendSector(packet, sizeof(FS2C_PACKET_ADJACENTSECTOR_NEWUSERENTRY));
 }
-
-//void CUser::NowPosition()
-//{
-//	PACKET_NOWPOSITION packet(sizeof(PACKET_NOWPOSITION), 18, m_index, m_position);
-//
-//	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_NOWPOSITION));
-//}
 
 void CUser::SendPacket_Move()
 {
-	PACKET_MOVE_USER packet(sizeof(PACKET_MOVE_USER), CS_PT_PLYAER_MOVE, m_index, m_characterInfo.position, m_endPosition);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_MOVE_USER(m_index, m_characterInfo.position, m_endPosition);
 
-	/*CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));*/
-	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_USER));
+	SendSector(packet, sizeof(FS2C_PACKET_MOVE_USER));
 }
 
 void CUser::SendPacket_Arrive()
 {
-	PACKET_ARRIVE packet(sizeof(PACKET_ARRIVE), CS_PT_PLYAER_ARRIVE, m_index, m_rotationY, m_characterInfo.position);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_ARRIVE(m_index, m_rotationY, m_characterInfo.position);
 
-	/*CUserManager::GetInstance()->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));*/
-	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_ARRIVE));
+	SendSector(packet, sizeof(FS2C_PACKET_ARRIVE));
+}
+
+void CUser::SendPacket_ChannelChange()
+{
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_CHANNEL_CHANGE();
+	Send(packet, packet.get()->size);
+}
+
+void CUser::SendPacket_LogOut()
+{
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_CLOSE_SOCKET();
+	Send(packet, sizeof(FS2C_PACKET_CLOSE_SOCKET));
 }
 
 void CUser::SendPacket_Idle_Attack()
 {
-	PACKET_IDLE_ATTACK packet(sizeof(PACKET_IDLE_ATTACK), CS_PT_IDLE_PLAYER_ATTACK, m_index, m_rotationY);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_IDLE_ATTACK(m_index, m_rotationY);
 
-	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_IDLE_ATTACK));
+	SendSector(packet, sizeof(FS2C_PACKET_IDLE_ATTACK));
 }
 
 void CUser::SendPacket_Move_Attack()
 {
-	PACKET_MOVE_ATTACK packet(sizeof(PACKET_MOVE_ATTACK), CS_PT_MOVE_PLAYER_ATTACK, m_index, m_rotationY, m_characterInfo.position);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_MOVE_ATTACK(m_index, m_rotationY, m_characterInfo.position);
 
-	SendSector(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_ATTACK));
+	SendSector(packet, sizeof(FS2C_PACKET_MOVE_ATTACK));
+}
+
+void CUser::SendPacket_Idle_ArcherAttack()
+{
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_IDLE_ARCHER_ATTACK(m_index, m_rotationY);
+
+	SendSector(packet, sizeof(FS2C_PACKET_IDLE_ARCHER_ATTACK));
+}
+
+void CUser::SendPacket_Move_ArcherAttack()
+{
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_MOVE_ARCHER_ATTACK(m_index, m_rotationY, m_characterInfo.position);
+
+	SendSector(packet, sizeof(FS2C_PACKET_MOVE_ARCHER_ATTACK));
 }
 
 void CUser::SendPacket_EXP()
 {
 	float percent = m_characterInfo.curExp / m_maxExp * 100.0f;
-	PACKET_EXP packet(sizeof(PACKET_EXP), CS_PT_EXP, percent);
+	
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_EXP(percent);
 
-	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_EXP));
+	Send(packet, sizeof(FS2C_PACKET_EXP));
 }
 
 void CUser::SendPacket_LevelUp()
 {
-	PACKET_PLAYER_LEVEL_UP packet(sizeof(PACKET_PLAYER_LEVEL_UP), CS_PT_LEVEL_UP, m_characterInfo.level, m_characterInfo.curExp, m_maxExp);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_PLAYER_LEVEL_UP(m_characterInfo.level, m_characterInfo.curExp, m_maxExp);
 
-	Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_PLAYER_LEVEL_UP));
+	Send(packet, sizeof(FS2C_PACKET_PLAYER_LEVEL_UP));
 }
 
 void CUser::SendPacket_Hit(int _damage)
@@ -392,30 +397,16 @@ void CUser::SendPacket_Hit(int _damage)
 	}
 	else
 	{
-		PACKET_PLAYER_HIT packet(sizeof(PACKET_PLAYER_HIT), CS_PT_PLAYER_HIT, m_characterInfo.curHp);
-
-		Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_PLAYER_HIT));
+		LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_PLAYER_HIT(m_characterInfo.curHp);
+		Send(packet, sizeof(FS2C_PACKET_PLAYER_HIT));
 	}
 }
 
-void CUser::SendPacket_Chatting(char* _str, int _chatLen)
+void CUser::SendPacket_Chatting(wchar_t* _str)
 {
-	char sendBuffer[100];
-	char* tempBuffer = sendBuffer;
-	*(u_short*)tempBuffer = 8 + 32 + _chatLen;
-	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = CS_PT_PLAYER_CHATTING;
-	tempBuffer += sizeof(u_short);
-	*(u_short*)tempBuffer = 32;
-	tempBuffer += sizeof(u_short);
-	memcpy(tempBuffer, m_characterInfo.name, 32);
-	tempBuffer += 32;
-	*(u_short*)tempBuffer = _chatLen;
-	tempBuffer += sizeof(u_short);
-	memcpy(tempBuffer, _str, _chatLen);
-	tempBuffer += _chatLen;
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_CHATTING(m_index, m_characterInfo.name, _str);
 
-	m_pSector->SendAll(sendBuffer, tempBuffer - sendBuffer);
+	m_pSector->SendAll(packet, sizeof(FS2C_PACKET_CHATTING));
 }
 
 void CUser::SendPacket_MonsterInfo()
@@ -441,7 +432,7 @@ int CUser::GetDamage()
 
 int CUser::GetField()
 {
-	return m_field;
+	return m_characterInfo.field;
 }
 
 sCharacterInfo& CUser::GetCharacterInfo()

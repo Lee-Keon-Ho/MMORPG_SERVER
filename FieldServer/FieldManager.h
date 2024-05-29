@@ -23,7 +23,7 @@ private:
 	~CFieldManager();
 
 private:
-	CMap* m_pMap[MAX]; // 나중에 이름 변경 ForestMap 사냥터
+	CMap* m_pMap[MAX]; // 나중에 이름 변경 ForestMap 사냥터 수정
 
 public:
 	CMap* GetMap(int _index);

@@ -1,14 +1,15 @@
 #pragma once
 #include "../NetCore/session.h"
-#include "Object.h"
 #include "PacketStruct.h"
 #include "struct.h"
 #include <string>
 
+constexpr int attack = 2;
+
 class CSector;
 class CMap;
 
-class CUser : public CSession, public CObject
+class CUser : public CSession
 {
 private:
 	VECTOR3		m_endPosition;
@@ -17,7 +18,6 @@ private:
 	int			m_state;
 	int			m_prevSector;
 	int			m_currentSector;
-	int			m_field;
 	float		m_maxExp;
 
 	sCharacterInfo m_characterInfo;
@@ -41,7 +41,7 @@ public:
 	void SetField(int _field);
 	void SetInfo(sCharacterInfo& _info);
 	void SetInfo(float _rotationY, int _state);
-	void SetInfo(VECTOR3& _position);
+	void SetInfo();
 	void SetInfo(VECTOR3& _current, VECTOR3& _end, int _state);
 	void SetInfo(VECTOR3& _current, VECTOR3& _end, float _rotationY, int _state);
 	void SetSector();
@@ -61,8 +61,9 @@ public:
 	sCharacterInfo& GetCharacterInfo();
 
 	void LogOut();
+	void Delete();
 	void CheckSectorUpdates();
-	void SendSector(char* _buffer, int _size);
+	void SendSector(LKH::sharedPtr<PACKET> _buffer, int _size);
 	void SendPacket_Infield();
 	void SendPacket_LogIn();
 	void SendPacket_NextField();
@@ -70,11 +71,15 @@ public:
 	void SendPacket_AdjacentSector_NewUserEntry();
 	void SendPacket_Move();
 	void SendPacket_Arrive();
+	void SendPacket_ChannelChange();
+	void SendPacket_LogOut();
 	void SendPacket_Idle_Attack();
 	void SendPacket_Move_Attack();
+	void SendPacket_Idle_ArcherAttack();
+	void SendPacket_Move_ArcherAttack();
 	void SendPacket_EXP();
 	void SendPacket_LevelUp();
 	void SendPacket_Hit(int _damage);
-	void SendPacket_Chatting(char* _str, int _chatLen);
+	void SendPacket_Chatting(wchar_t* _str);
 	void SendPacket_MonsterInfo();
 };

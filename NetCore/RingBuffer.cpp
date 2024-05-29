@@ -2,7 +2,10 @@
 #include "Lock.h"
 #include <memory>
 
-CRingBuffer::CRingBuffer(int _bufferSize) : m_size(_bufferSize), m_remainDataSize(0)
+CRingBuffer::CRingBuffer(int _bufferSize) : 
+	m_size(_bufferSize), 
+	m_remainDataSize(0),
+	m_lock(new SRWLOCK())
 {
 	m_buffer = new char[m_size];
 	m_tempBuffer = new char[m_size];
@@ -12,14 +15,14 @@ CRingBuffer::CRingBuffer(int _bufferSize) : m_size(_bufferSize), m_remainDataSiz
 	m_pWrite = m_buffer;
 	m_pBufferEnd = m_buffer + m_size;
 
-	InitializeCriticalSection(&m_cs);
+	InitializeSRWLock(m_lock);
 }
 
 CRingBuffer::~CRingBuffer()
 {
-	DeleteCriticalSection(&m_cs);
 	if (m_tempBuffer) { delete m_tempBuffer; m_tempBuffer = nullptr; }
 	if (m_buffer) { delete m_buffer; m_buffer = nullptr; }
+	if (m_lock) { delete m_lock; m_lock = nullptr; }
 }
 
 int CRingBuffer::GetWriteBufferSize()
@@ -33,7 +36,7 @@ int CRingBuffer::GetWriteBufferSize()
 
 void CRingBuffer::Write(int _size)
 {
-	CLock lock(m_cs);
+	CLock lock(m_lock, eLockType::EXCLUSIVE);
 	m_pWrite += _size;
 	m_remainDataSize += _size;
 
@@ -65,7 +68,7 @@ int CRingBuffer::GetReadSize()
 
 void CRingBuffer::Read(int _size)
 {
-	CLock lock(m_cs);
+	CLock lock(m_lock, eLockType::EXCLUSIVE);
 	if (m_remainDataSize >= _size)
 	{
 		int endBuf_Read = GetRemainSize_EndBuffer(m_pRead);

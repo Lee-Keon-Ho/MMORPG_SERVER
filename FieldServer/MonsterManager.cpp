@@ -47,7 +47,7 @@ void CMonsterManager::Start()
 
 unsigned int _stdcall CMonsterManager::MonsterManagerThreadFunc(void* _pArgs)
 {
-	CMonsterManager* pMonsterManager = (CMonsterManager*)_pArgs;
+	CMonsterManager* pMonsterManager = reinterpret_cast<CMonsterManager*>(_pArgs);
 	pMonsterManager->RunLoop();
 	return 0;
 }

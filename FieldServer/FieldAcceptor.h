@@ -9,5 +9,5 @@ public:
 	CFieldAcceptor(PCSTR _ip, u_short _port);
 	~CFieldAcceptor();
 
-	void Handle(ACCEPT_SOCKET_INFO _socket) override;
+	void OnConnect(ACCEPT_SOCKET_INFO _socket) override;
 };

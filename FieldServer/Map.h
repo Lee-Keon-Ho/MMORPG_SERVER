@@ -28,14 +28,12 @@ public:
 	void InSector(CUser& _user);
 	void OutSector(CUser& _user);
 
-	void SendAll(char* _buffer, int _size, int _sector);
-
-	std::map<SOCKET, CUser*> GetMap(int _sector);
+	void SendAll(LKH::sharedPtr<PACKET> _buffer, int _size, int _sector);
 
 	int GetSectorCount(int _sector);
 	CMapGrid* GetMapGrid();
 
 	CSector* GetSector(int _index);
 	std::vector<CSector*> SetDifference(int _a, int _b);
-	void DifferenceSend(char* _buffer, int _size, int _a, int _b);
+	void DifferenceSend(LKH::sharedPtr<PACKET> _buffer, int _size, int _a, int _b);
 };

@@ -1,11 +1,9 @@
 #pragma once
 #include "../NetCore/Thread.h"
+#include "constants.h"
 #include <iostream>
 #include <string>
 #include <vector>
-
-#define MAX_ARRAY_SIZE 10
-#define MAX_CHAR_SIZE 30
 
 using namespace std;
 
@@ -21,7 +19,7 @@ public:
 private:
 	vector<string> m_strList;
 
-	wchar_t m_list[MAX_ARRAY_SIZE][MAX_CHAR_SIZE] =
+	wchar_t m_list[array_max_size][chat_max_size] =
 	{
 		{ L"test1 중 입니다." },
 		{ L"test2 중 입니다." },

@@ -2,9 +2,9 @@
 #include "UserManager.h"
 CMap::CMap() : m_pMapGrid(nullptr)
 {
-	for (int i = 0; i < SECTOR_LINE; i++)
+	for (int i = 0; i < sector_line; ++i)
 	{
-		for (int x = 0; x < SECTOR_LINE; x++)
+		for (int x = 0; x < sector_line; ++x)
 		{
 			m_sector.push_back(new CSector(x, i));
 		}
@@ -16,19 +16,19 @@ CMap::CMap() : m_pMapGrid(nullptr)
 	int nx;
 	int ny;
 
-	for (int y = 0; y < SECTOR_LINE; y++)
+	for (int y = 0; y < sector_line; ++y)
 	{
-		for (int x = 0; x < SECTOR_LINE; x++)
+		for (int x = 0; x < sector_line; ++x)
 		{
-			int index = y * SECTOR_LINE + x;
+			int index = y * sector_line + x;
 
-			for (int i = 0; i < 9; i++)
+			for (int i = 0; i < 9; ++i)
 			{
 				nx = x + dx[i];
 				ny = y + dy[i];
-				if (nx < 0 || nx >= SECTOR_LINE || ny < 0 || ny >= SECTOR_LINE) continue;
+				if (nx < 0 || nx >= sector_line || ny < 0 || ny >= sector_line) continue;
 
-				m_sector[index]->SetAdjacentSector(m_sector[ny * SECTOR_LINE + nx]);
+				m_sector[index]->SetAdjacentSector(m_sector[ny * sector_line + nx]);
 			}
 		}
 	}
@@ -36,9 +36,9 @@ CMap::CMap() : m_pMapGrid(nullptr)
 
 CMap::CMap(const char* _fileName) : m_pMapGrid(nullptr)
 {
-	for (int i = 0; i < SECTOR_LINE; i++)
+	for (int i = 0; i < sector_line; ++i)
 	{
-		for (int x = 0; x < SECTOR_LINE; x++)
+		for (int x = 0; x < sector_line; ++x)
 		{
 			m_sector.push_back(new CSector(x, i));
 		}
@@ -50,19 +50,19 @@ CMap::CMap(const char* _fileName) : m_pMapGrid(nullptr)
 	int nx;
 	int ny;
 
-	for (int y = 0; y < SECTOR_LINE; y++)
+	for (int y = 0; y < sector_line; ++y)
 	{
-		for (int x = 0; x < SECTOR_LINE; x++)
+		for (int x = 0; x < sector_line; ++x)
 		{
-			int index = y * SECTOR_LINE + x;
+			int index = y * sector_line + x;
 
-			for (int i = 0; i < 9; i++)
+			for (int i = 0; i < 9; ++i)
 			{
 				nx = x + dx[i];
 				ny = y + dy[i];
-				if (nx < 0 || nx >= SECTOR_LINE || ny < 0 || ny >= SECTOR_LINE) continue;
+				if (nx < 0 || nx >= sector_line || ny < 0 || ny >= sector_line) continue;
 
-				m_sector[index]->SetAdjacentSector(m_sector[ny * SECTOR_LINE + nx]);
+				m_sector[index]->SetAdjacentSector(m_sector[ny * sector_line + nx]);
 			}
 		}
 	}
@@ -96,13 +96,7 @@ void CMap::Del(CMonster* _pMonster, int _sector)
 
 void CMap::InSector(CUser& _user)
 {
-	PACKET_INSECTOR packet;
-
-	packet.size = sizeof(PACKET_INSECTOR);
-	packet.type = CS_PT_INSECTOR;
-	packet.index = _user.GetIndex();
-	packet.currentPosition = *_user.GetPosition();
-	packet.endPosition = *_user.GetEndPosition();
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_INSECTOR(_user.GetIndex(), *_user.GetPosition(), *_user.GetEndPosition());
 
 	int prevSector = _user.GetPrevSector(); // a
 	int nowSector = _user.GetNowSector(); // b
@@ -112,7 +106,7 @@ void CMap::InSector(CUser& _user)
 
 	for (CSector* pSector : result)
 	{
-		pSector->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_INSECTOR));
+		pSector->Send(packet, sizeof(FS2C_PACKET_INSECTOR));
 		pSector->FetchUserInfoInNewSector(_user);
 		pSector->FetchMonsterInfoInNewSector(_user);
 	}
@@ -120,11 +114,7 @@ void CMap::InSector(CUser& _user)
 
 void CMap::OutSector(CUser& _user)
 {
-	PACKET_OUTSECTOR packet;
-
-	packet.size = static_cast<u_short>(sizeof(PACKET_OUTSECTOR));
-	packet.type = static_cast<u_short>(CS_PT_OUTSECTOR);
-	packet.index = static_cast<u_short>(_user.GetIndex());
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_OUTSECTOR(_user.GetIndex());
 
 	int prevSector = _user.GetPrevSector(); // a
 	int nowSector = _user.GetNowSector(); // b
@@ -134,20 +124,15 @@ void CMap::OutSector(CUser& _user)
 
 	for (CSector* pSector : result)
 	{
-		pSector->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_OUTSECTOR));
+		pSector->Send(packet, sizeof(FS2C_PACKET_OUTSECTOR));
 		pSector->DeleteUsersOutOfSector(_user);
 		pSector->DeleteMonstersOutOfSector(_user);
 	}
 }
 
-void CMap::SendAll(char* _buffer, int _size, int _sector)
+void CMap::SendAll(LKH::sharedPtr<PACKET> _buffer, int _size, int _sector)
 {
 	m_sector[_sector]->SendAll(_buffer, _size);
-}
-
-std::map<SOCKET, CUser*> CMap::GetMap(int _sector) // Get
-{
-	return m_sector[_sector]->GetMap();
 }
 
 int CMap::GetSectorCount(int _sector)
@@ -170,7 +155,7 @@ std::vector<CSector*> CMap::SetDifference(int _a, int _b)
 	return m_sector[_a]->Difference(m_sector[_b]->GetAdjacentSector());
 }
 
-void CMap::DifferenceSend(char* _buffer, int _size, int _a, int _b)
+void CMap::DifferenceSend(LKH::sharedPtr<PACKET> _buffer, int _size, int _a, int _b)
 {
 	std::vector<CSector*> result = m_sector[_a]->Difference(m_sector[_b]->GetAdjacentSector());
 

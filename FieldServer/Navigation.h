@@ -14,17 +14,15 @@ public:
 	typedef deque<unique_ptr<CJob>> t_que; // tQ
 
 private:
-	HANDLE m_thread;
+	HANDLE				m_thread;
 
-	// 이 부분을 새로운 클래스를 만들어서
-	// 필요한 내비로 찾아라 라는 식으로 만들면 훨씬 좋을 것 같다.
-	CMapGrid* m_pMapGrid;
-	CMapGrid* m_pWinterMapGrid;
-	unique_ptr<CAStar> m_pAStar;
+	CMapGrid*			m_pMapGrid;
+	CMapGrid*			m_pWinterMapGrid;
+	unique_ptr<CAStar>	m_pAStar;
 
-	t_que m_jobs;
+	t_que				m_jobs;
 
-	CRITICAL_SECTION m_spin_cs; // cs_spin 이름 변경, 새로 만들거나
+	PSRWLOCK			m_lock;
 public:
 	CNavigation();
 	~CNavigation();

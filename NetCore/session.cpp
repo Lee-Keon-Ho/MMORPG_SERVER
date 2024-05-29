@@ -1,56 +1,74 @@
-#include "IOCP.h"
 #include "session.h"
 #include "RingBuffer.h"
+#include "Lock.h"
 #include <stdio.h>
 #include <iostream>
 #include <exception>
 #include <assert.h>
-
-#define BUFFER_MAX 1000
+#include <thread>
 
 CSession::CSession()
 {
 	
 }
 
-CSession::CSession(ACCEPT_SOCKET_INFO _socketInfo)
+CSession::CSession(ACCEPT_SOCKET_INFO& _socketInfo) : 
+	m_socket(_socketInfo.socket),
+	m_addr(_socketInfo.addr),
+	m_ringBuffer(buffer_max),
+	m_heartBeatCount(0)
 {
-	m_overlapped.session = this;
-	m_socket_info = _socketInfo;
-	m_ringBuffer = new CRingBuffer(BUFFER_MAX);
-	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
-	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
+	m_overlapped_recv.session = this;
+	m_overlapped_recv.ioType = static_cast<int>(eFlag::RECV);
+	m_overlapped_send.session = this;
+	m_overlapped_send.ioType = static_cast<int>(eFlag::SEND);
 
-	CIocp::GetInstance()->Associate(m_socket_info.socket);
+	m_dataBuf.buf = m_ringBuffer.GetWriteBuffer();
+	m_dataBuf.len = m_ringBuffer.GetWriteBufferSize();
+
+
+	m_pReader = std::make_unique<CReader>(buffer_max);
+	assert(m_pReader != nullptr);
+	m_pWriter = std::make_unique<CWriter>();
+	assert(m_pWriter != nullptr);
 
 	Recv();
 }
 
+
 CSession::~CSession()
 {
-	if (m_ringBuffer) { delete m_ringBuffer; m_ringBuffer = nullptr; }
-	closesocket(m_socket_info.socket);
+	closesocket(m_socket);
 }
 
-bool CSession::Send(char* _buffer, int _size)
+bool CSession::Send(LKH::sharedPtr<PACKET> _packet, int _size) // LSend
 {
-	DWORD sendSize = 0;
-	DWORD flags = 0;
-	DWORD err = 0;
-	WSABUF buffer;
-	buffer.len = _size;
-	buffer.buf = _buffer;
+	if (m_pWriter == nullptr) return false;
+	m_pWriter.get()->Write(_packet);
 
-	if (WSASend(m_socket_info.socket, &buffer, 1, &sendSize, 0, NULL, NULL) == SOCKET_ERROR) // 논 블록킹 함수
+	if (m_pWriter.get()->IsWriteLenZero())
 	{
-		err = WSAGetLastError();
-		printf("Error WSASend would block %d \n", err);
-		return false;
+		DWORD sendSize = 0;
+		DWORD err = 0;
+
+		m_pWriter.get()->SetBuffer();
+
+		if (WSASend(m_socket, m_pWriter.get()->GetWSABUF(), 1, &sendSize, 0, &m_overlapped_send, NULL) == SOCKET_ERROR)
+		{
+			err = GetLastError();
+			if (err != WSAEWOULDBLOCK)
+			{
+				std::cout << "WSASend Error : " << err << std::endl;
+			}
+		}
+
+		if(sendSize > 0);
+		{
+			// 수정 오류 처리
+		}
 	}
 
-	assert(sendSize > 0);
-
-	return true;
+	return false;
 }
 
 bool CSession::Recv()
@@ -59,46 +77,75 @@ bool CSession::Recv()
 	DWORD flags = 0;
 	DWORD err;
 
-	if (WSARecv(m_socket_info.socket, &m_dataBuf, 1, &recvBytes, &flags, &m_overlapped, NULL) == SOCKET_ERROR)
+	if (WSARecv(m_socket, m_pReader.get()->GetWSABUF(), 1, &recvBytes, &flags, &m_overlapped_recv, NULL) == SOCKET_ERROR)
 	{
 		if (err = WSAGetLastError() != WSA_IO_PENDING)
 		{
 			printf("Error WSARecv : %d \n", err);
 			return false;
 		}
-		return false;
 	}
 	return true;
 }
 
 void CSession::OnRecv(DWORD _size)
 {
-	m_ringBuffer->Write(_size);
+	m_pReader.get()->ConsumeSize(_size);
 
-	PacketHandle();
+	int size = PacketHandle();
 
-	m_dataBuf.len = m_ringBuffer->GetWriteBufferSize();
-	m_dataBuf.buf = m_ringBuffer->GetWriteBuffer();
-	
+	m_pReader.get()->Read(size);
+
 	Recv();
+}
+
+void CSession::OnSend()
+{
+	if (m_pWriter == nullptr) return;
+	m_pWriter.get()->HandleUsedBuffer();
+
+	if (m_pWriter.get()->IsWriteBuffer()) // writeSize
+	{
+		DWORD sendSize = 0;
+		DWORD err = 0;
+
+		m_pWriter.get()->SetBuffer();
+
+		WSASend(m_socket, m_pWriter.get()->GetWSABUF(), 1, &sendSize, 0, &m_overlapped_send, NULL);
+
+		assert(sendSize > 0);
+	}
+	else m_pWriter.get()->SetWriteLenZero();
+}
+
+bool CSession::checkHeartBeat()
+{
+	++m_heartBeatCount;
+	if (m_heartBeatCount <= heartBeat_max) return true;
+	return false;
+}
+
+void CSession::recvHeartBeat()
+{
+	m_heartBeatCount = 0;
 }
 
 SOCKET CSession::GetSocket()
 {
-	return m_socket_info.socket;
+	return m_socket;
 }
 
 SOCKADDR_IN CSession::GetAddr()
 {
-	return m_socket_info.addr;
+	return m_addr;
 }
 
 char* CSession::GetPacketBuffer()
 {
-	return m_ringBuffer->GetPacketBuffer();
+	return m_pReader.get()->GetBuffer();
 }
 
 int CSession::GetReadSize()
 {
-	return m_ringBuffer->GetReadSize();
+	return m_pReader.get()->GetReadSize();
 }

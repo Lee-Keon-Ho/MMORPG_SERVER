@@ -15,5 +15,8 @@ public:
 	bool Start();
 	void RunLoop() override;
 
-	virtual void Handle(ACCEPT_SOCKET_INFO _socket) = 0;
+	virtual void OnConnect(ACCEPT_SOCKET_INFO _info) = 0;
+
+private:
+	void onConnect(ACCEPT_SOCKET_INFO _info);
 };

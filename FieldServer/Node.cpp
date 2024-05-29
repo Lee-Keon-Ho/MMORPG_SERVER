@@ -4,7 +4,7 @@ CNode::CNode() : m_x(0), m_y(0), m_f(0), m_g(0), m_h(0), m_parent(nullptr)
 {
 }
 
-CNode::CNode(unsigned int _x, unsigned int _y) : m_x(_x), m_y(_y), m_f(0), m_g(0), m_h(0), m_parent(nullptr)
+CNode::CNode(int _x, int _y) : m_x(_x), m_y(_y), m_f(0), m_g(0), m_h(0), m_parent(nullptr)
 {
 
 }
@@ -19,7 +19,7 @@ void CNode::GetParent(std::vector<VECTOR3>& _vector)
 	_vector.push_back(VECTOR3(static_cast<float>(m_x), 1, static_cast<float>(m_y)));
 }
 
-void CNode::SetNode(CNode _end, CNode* _parent, unsigned int _dest)
+void CNode::SetNode(CNode _end, CNode* _parent, int _dest)
 {
 	int h = 0;
 	unsigned int endX = _end.m_x;

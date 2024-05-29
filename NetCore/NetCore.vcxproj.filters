@@ -42,6 +42,24 @@
     <ClInclude Include="Lock.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="sharedPtr.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SpinLock.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LStruct.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Reader.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Writer.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LOverlapped.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TcpListener.cpp">
@@ -69,6 +87,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Lock.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SpinLock.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Reader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Writer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="LOverlapped.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

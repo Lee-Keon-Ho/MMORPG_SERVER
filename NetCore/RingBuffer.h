@@ -14,7 +14,7 @@ private:
 
 	int		m_remainDataSize;
 
-	CRITICAL_SECTION m_cs;
+	PSRWLOCK m_lock;
 public:
 	CRingBuffer(int _bufferSize = 65530);
 	virtual ~CRingBuffer();

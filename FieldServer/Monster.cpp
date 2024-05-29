@@ -33,7 +33,7 @@ CMonster::CMonster() :
 	m_prevSector(0)
 {
 	m_count = Random(100, 0);
-	m_currentSector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
+	m_currentSector = (static_cast<int>(m_currentPosition.x) / sector_size) + (static_cast<int>(m_currentPosition.z) / sector_size) * sector_line;
 
 	m_pMap = CFieldManager::GetInstance()->GetMap(FOREST_HUNT);
 	m_pMap->Add(this, m_currentSector);
@@ -65,7 +65,7 @@ CMonster::CMonster(VECTOR3 _position, VECTOR2_INT _rangeMin, VECTOR2_INT _rangeM
 	m_prevSector(0)
 {
 	m_count = Random(100, 0);
-	m_currentSector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
+	m_currentSector = (static_cast<int>(m_currentPosition.x) / sector_size) + (static_cast<int>(m_currentPosition.z) / sector_size) * sector_line;
 
 	if (m_type == 5)
 	{
@@ -91,44 +91,31 @@ CMonster::~CMonster()
 
 void CMonster::SendPacketCreate(CUser* _pUser)
 {
-	PACKET_CREATE_MONSTER packet;
-	packet.size = sizeof(PACKET_CREATE_MONSTER);
-	packet.type = CS_PT_CREATE_MONSTER;
-	packet.index = m_index;
-	packet.monsterType = m_type;
-	packet.level = m_level;
-	packet.currentPosition = m_currentPosition;
-
-	if (m_state == RUN) packet.destinationPosition = m_path[m_pathIndex];
-	else packet.destinationPosition = m_currentPosition;
-	
-	_pUser->Send(reinterpret_cast<char*>(&packet), sizeof(PACKET_CREATE_MONSTER));
-	//m_pSector->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_CREATE_MONSTER));
+	if (m_state == RUN)
+	{
+		LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_CREATE_MONSTER(m_index, m_type, m_level, m_currentPosition, m_path[m_pathIndex]);
+		_pUser->Send(packet, sizeof(FS2C_PACKET_CREATE_MONSTER));
+	}
+	else
+	{
+		LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_CREATE_MONSTER(m_index, m_type, m_level, m_currentPosition, m_currentPosition);
+		_pUser->Send(packet, sizeof(FS2C_PACKET_CREATE_MONSTER));
+	}
 }
 
-// sendPacket으로 변경
 void CMonster::SendPacketMove()
-{
-	PACKET_MOVE_MONSTER packet(sizeof(PACKET_MOVE_MONSTER), CS_PT_MOVE_MONSTER, m_index, m_type, m_currentPosition, m_path[m_pathIndex]);
-	
-	m_pSector->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_MOVE_MONSTER));
+{	
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_MOVE_MONSTER(m_index, m_type, m_currentPosition, m_path[m_pathIndex]);
+
+	m_pSector->SendAll(packet, sizeof(FS2C_PACKET_MOVE_MONSTER));
 }
 
 void CMonster::Update(float _deltaTick, CNavigation* _pNavi)
 {
-	//if (_deltaTick > 0.13f) _deltaTick = 0.12f;
-
-	// 1. 함수포인터
-	// (this->*StateFunc)[RUN]() ;  // 빠르다 단점 다운되면 여기서 원인을 찾아야 함.
-	// 
-	// 2. state 베이스로 하는 class 호출
-	// CState <- CStateIdle
-	// m_state->Update() ;  // virtual 단점 - 느리다
-	
 	switch (m_state) 
 	{
 	case IDLE:
-		Idle(_deltaTick, _pNavi); // _deltaTick
+		Idle(_deltaTick, _pNavi);
 		break;
 	case RUN:
 		Run(_deltaTick, _pNavi);
@@ -146,7 +133,7 @@ void CMonster::Update(float _deltaTick, CNavigation* _pNavi)
 		Die(_deltaTick, _pNavi);
 		break;
 	case WAIT:
-		Wait();
+		Wait(_deltaTick, _pNavi);
 		break;
 	}
 }
@@ -161,26 +148,27 @@ void CMonster::Hit(CUser* _pTarget)
 	if (m_hp <= 0)
 	{
 		m_state = DIE;
-		PACKET_DIE_MONSTER packetDie(sizeof(PACKET_DIE_MONSTER), CS_PT_DIE_MONSTER, static_cast<u_short>(m_index), static_cast<u_short>(damage));
 
-		m_pSector->SendAll(reinterpret_cast<char*>(&packetDie), sizeof(PACKET_DIE_MONSTER));
+		LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_DIE_MONSTER(static_cast<u_short>(m_index), static_cast<u_short>(damage));
+
+		m_pSector->SendAll(packet, sizeof(FS2C_PACKET_DIE_MONSTER));
 		
 		m_target->AddExp(m_exp);
 		m_target = nullptr;
 	}
 	else
 	{
-		m_state = HIT;
+		if (m_state != TARGET_RUN) m_state = HIT;
 
-		PACKET_HIT_MONSTER packet(sizeof(PACKET_HIT_MONSTER), CS_PT_HIT_MONSTER, static_cast<u_short>(m_index), static_cast<u_short>(m_hp), static_cast<u_short>(damage));
+		LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_HIT_MONSTER(static_cast<u_short>(m_index), static_cast<u_short>(m_hp), static_cast<u_short>(damage));
 
-		m_pSector->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_HIT_MONSTER));
+		m_pSector->SendAll(packet, sizeof(FS2C_PACKET_HIT_MONSTER));
 	}
 }
 
-void CMonster::Wait()
+void CMonster::Wait(float _deltaTick, CNavigation* _pNavi)
 {
-	if (m_path.size() == 0) m_state = IDLE;
+	if (m_path.size() == 0) m_state = WAIT;
 
 	if (m_target == nullptr)
 	{
@@ -194,6 +182,10 @@ void CMonster::Wait()
 				SendPacketMove();
 			}
 		}
+		else
+		{
+			m_state = IDLE;
+		}
 	}
 	else
 	{
@@ -203,6 +195,10 @@ void CMonster::Wait()
 			m_pathIndex = 1;
 			SetUnitVector();
 			SendPacketMove();
+		}
+		else
+		{
+			m_state = ATTACK;
 		}
 	}
 
@@ -267,7 +263,7 @@ void CMonster::Run(float _deltaTick, CNavigation* _pNavi)
 	}
 	else
 	{
-		sector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
+		sector = (static_cast<int>(m_currentPosition.x) / sector_size) + (static_cast<int>(m_currentPosition.z) / sector_size) * sector_line;
 
 		if (sector != m_currentSector)
 		{
@@ -300,7 +296,7 @@ void CMonster::Hit(float _deltaTick, CNavigation* _pNavi)
 {
 	m_attackTick = 0.0f;
 	float distance = Distance(*m_target->GetPosition(), m_currentPosition);
-	if (distance > 1.5f)
+	if (distance > 1.0f)
 	{
 		TarGetDestination(_pNavi);
 	}
@@ -318,7 +314,7 @@ void CMonster::Hit(float _deltaTick, CNavigation* _pNavi)
 
 void CMonster::Attack(float _deltaTick, CNavigation* _pNavi)
 {
-	if (Distance(*m_target->GetPosition(), m_currentPosition) > 1.5f)
+	if (Distance(*m_target->GetPosition(), m_currentPosition) > 1.2f)
 	{
 		TarGetDestination(_pNavi);
 	}
@@ -328,7 +324,7 @@ void CMonster::Attack(float _deltaTick, CNavigation* _pNavi)
 		m_attackTick += _deltaTick;
 		m_state = IDLE;
 
-		if (Distance(*m_target->GetPosition(), m_currentPosition) <= 1.5f)
+		if (Distance(*m_target->GetPosition(), m_currentPosition) <= 2.0f)
 		{
 			m_target->SendPacket_Hit(m_damage);
 		}
@@ -356,31 +352,31 @@ void CMonster::TarGetDestination(CNavigation* _pNavi)
 
 	VECTOR3 targetPosition = *m_target->GetPosition(); // Distance()를 확인해야한다.
 
-	if (targetPosition.x - m_currentPosition.x < 0) // VECTOR3 로 빼자
-	{
-		x = targetPosition.x - 1.5f;
-	}
-	else if(targetPosition.x - m_currentPosition.x == 0)
-	{
-		x = targetPosition.x;
-	}
-	else
-	{
-		x = targetPosition.x + 1.5f;
-	}
-	
-	if (targetPosition.z - m_currentPosition.z < 0)
-	{
-		z = targetPosition.z - 1.5f;
-	}
-	else if (targetPosition.z - m_currentPosition.z == 0)
-	{
-		z = targetPosition.z;
-	}
-	else
-	{
-		z = targetPosition.z + 1.5f;
-	}
+	//if (targetPosition.x - m_currentPosition.x < 0) // VECTOR3 로 빼자
+	//{
+	//	x = targetPosition.x - 1.0f;
+	//}
+	//else if(targetPosition.x - m_currentPosition.x == 0)
+	//{
+	//	x = targetPosition.x;
+	//}
+	//else
+	//{
+	//	x = targetPosition.x + 1.0f;
+	//}
+	//
+	//if (targetPosition.z - m_currentPosition.z < 0)
+	//{
+	//	z = targetPosition.z - 1.0f;
+	//}
+	//else if (targetPosition.z - m_currentPosition.z == 0)
+	//{
+	//	z = targetPosition.z;
+	//}
+	//else
+	//{
+	//	z = targetPosition.z + 1.0f;
+	//}
 
 	m_destinationPosition = targetPosition;
 	
@@ -390,7 +386,7 @@ void CMonster::TarGetDestination(CNavigation* _pNavi)
 
 void CMonster::TargetRun(float _deltaTick, CNavigation* _pNavi)
 {
-	if (Distance(m_currentPosition, m_firstHitPosition) >= 10.0f)
+	if (Distance(m_currentPosition, m_firstHitPosition) >= 150.0f)
 	{
 		m_destinationPosition = m_firstHitPosition;
 		m_target = nullptr;
@@ -399,9 +395,8 @@ void CMonster::TargetRun(float _deltaTick, CNavigation* _pNavi)
 		return;
 	}
 
-	if (Distance(*m_target->GetPosition(), m_currentPosition) < 1.5f)
+	if (Distance(*m_target->GetPosition(), m_currentPosition) <= 1.2f)
 	{
-		m_target->SendPacket_Hit(m_damage);
 		m_state = ATTACK;
 		m_pathIndex = 0;
 		return;
@@ -418,7 +413,7 @@ void CMonster::TargetRun(float _deltaTick, CNavigation* _pNavi)
 	}
 	else
 	{
-		sector = (static_cast<int>(m_currentPosition.x) / SECTOR_SIZE) + (static_cast<int>(m_currentPosition.z) / SECTOR_SIZE) * SECTOR_LINE;
+		sector = (static_cast<int>(m_currentPosition.x) / sector_size) + (static_cast<int>(m_currentPosition.z) / sector_size) * sector_line;
 		if (sector != m_currentSector)
 		{
 			SendPacketExitSector(m_currentSector, sector);
@@ -478,30 +473,30 @@ void CMonster::SetUnitVector()
 
 void CMonster::SendPacketAttack()
 {
-	PACKET_ATTACK_MONSTER packet(sizeof(PACKET_ATTACK_MONSTER), CS_PT_ATTACK_MONSTER, static_cast<u_short>(m_index), *m_target->GetPosition());
-
-	m_pSector->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_ATTACK_MONSTER));
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_ATTACK_MONSTER(static_cast<u_short>(m_index), *m_target->GetPosition());
+	m_pSector->SendAll(packet, sizeof(FS2C_PACKET_ATTACK_MONSTER));
 }
 
 void CMonster::SendPacketRegen()
 {
-	PACKET_REGEN_MONSTER packet(sizeof(PACKET_REGEN_MONSTER), CS_PT_REGEN_MONSTER, static_cast<u_short>(m_index), static_cast<u_short>(m_type), static_cast<u_short>(m_level),m_regenPosition);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_REGEN_MONSTER(static_cast<u_short>(m_index), static_cast<u_short>(m_type), static_cast<u_short>(m_level), m_regenPosition);
 
-	m_pSector->SendAll(reinterpret_cast<char*>(&packet), sizeof(PACKET_REGEN_MONSTER));
+	m_pSector->SendAll(packet, sizeof(FS2C_PACKET_REGEN_MONSTER));
 }
 
 void CMonster::SendPacketExitSector(int _sectorA, int _sectorB)
 {
-	PACKET_EXIT_SECTOR_MONSTER packet(sizeof(PACKET_EXIT_SECTOR_MONSTER), CS_PT_EXIT_SECTOR_MONSTER, m_index, m_type);
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_EXIT_SECTOR_MONSTER(m_index, m_type);
 
 	m_pMap->Del(this, _sectorA);
-	m_pMap->DifferenceSend(reinterpret_cast<char*>(&packet), sizeof(PACKET_EXIT_SECTOR_MONSTER), _sectorA, _sectorB);
+	m_pMap->DifferenceSend(packet, sizeof(FS2C_PACKET_EXIT_SECTOR_MONSTER), _sectorA, _sectorB);
 }
 
 void CMonster::SendPacketEnterSector(int _sectorA, int _sectorB)
 {
-	PACKET_ENTER_SECTOR_MONSTER packet(sizeof(PACKET_ENTER_SECTOR_MONSTER), CS_PT_ENTER_SECTOR_MONSTER, m_index, m_type, m_currentPosition, m_path[m_pathIndex]);
-	
+	LKH::sharedPtr<PACKET> packet = new FS2C_PACKET_ENTER_SECTOR_MONSTER(m_index, m_type, m_currentPosition, m_path[m_pathIndex]);
+
+
 	m_pMap->Add(this, _sectorA);
-	m_pMap->DifferenceSend(reinterpret_cast<char*>(&packet), sizeof(PACKET_ENTER_SECTOR_MONSTER), _sectorA, _sectorB);
+	m_pMap->DifferenceSend(packet, sizeof(FS2C_PACKET_ENTER_SECTOR_MONSTER), _sectorA, _sectorB);
 }

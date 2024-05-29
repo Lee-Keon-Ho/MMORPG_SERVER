@@ -7,9 +7,6 @@
 #include <map>
 #include <vector>
 
-#define SECTOR_SIZE 18
-#define SECTOR_LINE 15
-
 using namespace std;
 
 class CSector
@@ -19,15 +16,15 @@ private:
 	typedef vector<CSector*> sector_t;
 	typedef map<int, CMonster*> monster_t;
 private:
-	userMap_t m_userList;
-	monster_t m_monsterList;
+	userMap_t	m_userList;
+	monster_t	m_monsterList;
 
-	CRITICAL_SECTION m_cs_user;
-	CRITICAL_SECTION m_cs_monster;
+	PSRWLOCK	m_userLock;
+	PSRWLOCK	m_monsterLock;
 
-	sector_t m_AdjacentSector;
+	sector_t	m_AdjacentSector;
 
-	int nSector; // test
+	int			nSector; // test
 public:
 	CSector();
 	CSector(int _x, int _y);
@@ -46,12 +43,12 @@ public:
 	void Add(CMonster* _pMonster);
 	void Del(CUser* _user);
 	void Del(CMonster* _pMonster);
-	void Send(char* _buffer, int _size);
-	void SendAll(char* _buffer, int _size);
+	void Send(LKH::sharedPtr<PACKET> _packet, int _size);
+	void SendAll(LKH::sharedPtr<PACKET> _packet, int _size);
 	
 	int Size();
 	int GetSectorUserCount();
-	map<SOCKET, CUser*> GetMap();
+	map<SOCKET, CUser*>& GetUserList();
 	map<SOCKET, CUser*> GetAdjacentGetMap(int _index);
 	vector<CSector*> GetAdjacentSector();
 	int GetAdjacentUserCount(int _index);

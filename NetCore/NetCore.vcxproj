@@ -144,6 +144,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Lock.h" />
+    <ClInclude Include="LOverlapped.h" />
+    <ClInclude Include="Reader.h" />
+    <ClInclude Include="sharedPtr.h" />
+    <ClInclude Include="SpinLock.h" />
+    <ClInclude Include="LStruct.h" />
     <ClInclude Include="TAcceptor.h" />
     <ClInclude Include="Thread.h" />
     <ClInclude Include="IOCP.h" />
@@ -152,9 +157,13 @@
     <ClInclude Include="TcpListener.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="workerThread.h" />
+    <ClInclude Include="Writer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lock.cpp" />
+    <ClCompile Include="LOverlapped.cpp" />
+    <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="SpinLock.cpp" />
     <ClCompile Include="TAcceptor.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="IOCP.cpp" />
@@ -163,6 +172,7 @@
     <ClCompile Include="TcpListener.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
     <ClCompile Include="workerThread.cpp" />
+    <ClCompile Include="Writer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

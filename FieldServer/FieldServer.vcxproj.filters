@@ -16,11 +16,11 @@
     <Filter Include="소스 파일\AppSub">
       <UniqueIdentifier>{2ecf77bc-9817-42ba-ad93-52aeb33b188e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\DB">
+      <UniqueIdentifier>{58834e41-4bc1-44b7-b1bd-1b634cca0bfa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="App.cpp">
       <Filter>소스 파일\AppSub</Filter>
     </ClCompile>
@@ -86,6 +86,27 @@
     </ClCompile>
     <ClCompile Include="Job.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="HeartBeat.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MonitorAcceptor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MonitorConnection.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ODBC.cpp">
+      <Filter>소스 파일\DB</Filter>
+    </ClCompile>
+    <ClCompile Include="ODBCManager.cpp">
+      <Filter>소스 파일\DB</Filter>
+    </ClCompile>
+    <ClCompile Include="ODBCPool.cpp">
+      <Filter>소스 파일\DB</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +190,27 @@
     </ClInclude>
     <ClInclude Include="Job.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="HeartBeat.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="constants.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitorAcceptor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitorConnection.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ODBC.h">
+      <Filter>소스 파일\DB</Filter>
+    </ClInclude>
+    <ClInclude Include="ODBCManager.h">
+      <Filter>소스 파일\DB</Filter>
+    </ClInclude>
+    <ClInclude Include="ODBCPool.h">
+      <Filter>소스 파일\DB</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
